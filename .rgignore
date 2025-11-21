@@ -1,0 +1,8 @@
+*_test.go
+README.md
+go.mod
+go.sum
+*.bak
+.gitlab-ci.yml
+.air.toml
+.golangci.yml

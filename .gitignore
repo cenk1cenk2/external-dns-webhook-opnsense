@@ -1,0 +1,33 @@
+.DS_Store
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.bin
+/.env*
+
+# dependencies
+/bin
+/vendor/
+
+# output directory
+/dist
+/.tmp
+
+# user data
+/.env*
+/.task
+
+# testing data
+coverage.out
+coverprofile.out
+suite_test.json
+
+# personal data
+/.gitlab.nvim
+tmp

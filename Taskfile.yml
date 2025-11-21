@@ -1,0 +1,36 @@
+---
+# https://taskfile.dev
+
+version: "3"
+
+vars: {}
+
+env:
+  CGO_ENABLED: 0
+  GO_VERSION: 1.25
+  PORT: 8888
+  LOG_LEVEL: debug
+  LOG_ENCODER: console
+
+includes:
+  go:
+    taskfile: https://gitlab.kilic.dev/libraries/taskfiles/-/raw/main/Taskfile.go-application.yml?ref_type=heads
+    flatten: true
+
+tasks:
+  build:
+    desc: Build the application.
+    cmds:
+      - task: build.platform
+        vars:
+          BINARY_DIR: ./dist
+          BINARY_NAME: external-dns-webhook-opnsense
+          BINARY_APPEND_OS: false
+          BINARY_APPEND_ARCH: false
+          flags: "{{ .CLI_FLAGS }}"
+
+  watch:
+    desc: Build and watch for changes to rebuild the application.
+    cmds:
+      - |
+        air -c .air.toml

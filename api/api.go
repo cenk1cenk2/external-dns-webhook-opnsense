@@ -1,0 +1,99 @@
+package api
+
+import (
+	"context"
+	"net"
+	"time"
+
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
+	"github.com/labstack/echo/v4"
+)
+
+type Api struct {
+	Config ApiConfig
+	Echo   *echo.Echo
+	*ApiSvc
+}
+
+type ApiConfig struct {
+	SwaggerUIBasePath string
+}
+
+type ApiSvc struct {
+	Log       *services.Logger
+	Validator *services.Validator
+}
+
+func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
+	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+
+	a := &Api{
+		Config: conf,
+		Echo:   e,
+		ApiSvc: svc,
+	}
+
+	a.SetupMiddleware()
+	a.RegisterRoutes()
+
+	return a
+}
+
+func (a *Api) Start(address string) chan error {
+	log := a.Log.WithCaller()
+
+	err := make(chan error)
+
+	go func() {
+		err <- a.Echo.Start(address)
+	}()
+
+	log.Infof("Starting server at address: %s", (<-a.GetListener()).Addr().String())
+
+	return err
+}
+
+func (a *Api) IsReady() chan bool {
+	res := make(chan bool, 1)
+
+	<-a.GetListener()
+
+	res <- true
+
+	return res
+}
+
+func (a *Api) GetListener() chan net.Listener {
+	log := a.Log.WithCaller()
+	listener := make(chan net.Listener, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	go func() {
+		<-ctx.Done()
+		err := ctx.Err()
+
+		if err != nil && err != context.Canceled {
+			log.Panicf("Listener not ready: %w", err)
+		}
+	}()
+
+	for {
+		if a.Echo.Listener != nil {
+			break
+		}
+	}
+
+	listener <- a.Echo.Listener
+
+	return listener
+}
+
+func (a *Api) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return a.Echo.Shutdown(ctx)
+}
