@@ -32,7 +32,7 @@ var _ = Describe("Context", func() {
 			nil,
 		)
 
-		e.GET("/:a/:b", ctx.WrapHandler(
+		e.GET("/:a/:b", ctx.With(
 			func(c *ctx.Context) error {
 				params := &PathParams{}
 
@@ -68,7 +68,7 @@ var _ = Describe("Context", func() {
 		q.Add("b", "path")
 		req.URL.RawQuery = q.Encode()
 
-		e.GET("/:a/:b", ctx.WrapHandler(
+		e.GET("/:a/:b", ctx.With(
 			func(c *ctx.Context) error {
 				params := &QueryParams{}
 
@@ -102,7 +102,7 @@ var _ = Describe("Context", func() {
 		req.Header.Add("a", "test")
 		req.Header.Add("b", "path")
 
-		e.GET("/:a/:b", ctx.WrapHandler(
+		e.GET("/:a/:b", ctx.With(
 			func(c *ctx.Context) error {
 				params := &Headers{}
 
@@ -139,7 +139,7 @@ var _ = Describe("Context", func() {
 			),
 		)
 
-		e.POST("/", ctx.WrapHandler(
+		e.POST("/", ctx.With(
 			func(c *ctx.Context) error {
 				body := &Body{}
 
@@ -199,7 +199,7 @@ var _ = Describe("Context", func() {
 		req.URL.RawQuery = q.Encode()
 		req.Header.Add("a", "test")
 
-		e.POST("/:a/:b", ctx.WrapHandler(
+		e.POST("/:a/:b", ctx.With(
 			func(c *ctx.Context) error {
 				req := &Req{
 					Path:    &PathParams{},
@@ -239,7 +239,7 @@ var _ = Describe("Context", func() {
 			nil,
 		)
 
-		e.GET("/", ctx.WrapHandler(
+		e.GET("/", ctx.With(
 			func(c *ctx.Context) error {
 				c.Log.Warnf("yattara")
 

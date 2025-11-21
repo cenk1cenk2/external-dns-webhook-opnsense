@@ -6,7 +6,7 @@ import (
 
 type HandlerFunc func(c *Context) error
 
-func WrapHandler(h HandlerFunc, with ...interface{}) echo.HandlerFunc {
+func With(h HandlerFunc, with ...interface{}) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		return RunWithContext(c, h, with...)
 	}

@@ -31,7 +31,7 @@ var _ = Describe("Middleware", func() {
 	It("should be able to recover from a panic", func() {
 		req := httptest.NewRequest(http.MethodGet, "/panic", nil)
 
-		a.Echo.GET("/panic", ctx.WrapHandler(
+		a.Echo.GET("/panic", ctx.With(
 			func(c *ctx.Context) error {
 				panic("imdat")
 			}),
