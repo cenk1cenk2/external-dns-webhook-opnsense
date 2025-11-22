@@ -12,5 +12,5 @@ import (
 // @Success	200	{string}	string
 // @Router	/healthz [get]
 func (h *Handler) HandleHealthGet(c *ctx.Context) error {
-	return c.JSON(http.StatusOK, "")
+	return c.NoContent(http.StatusOK)
 }

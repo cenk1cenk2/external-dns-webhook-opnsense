@@ -19,5 +19,5 @@ func (h *Handler) HandleReadyGet(c *ctx.Context) error {
 		return c.NewHTTPError(http.StatusServiceUnavailable, fmt.Errorf("Service is not ready."))
 	}
 
-	return c.JSON(http.StatusOK, "Service is ready.")
+	return c.NoContent(http.StatusOK)
 }
