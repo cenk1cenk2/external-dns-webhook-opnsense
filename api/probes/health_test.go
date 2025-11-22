@@ -16,7 +16,7 @@ var _ = Describe("/healthz", func() {
 		It("should return http.StatusOK when ready", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.RespondWithContext(c, handler.HandleHealthGet)).ToNot(HaveOccurred())
+			Expect(ctx.Respond(c, handler.HandleHealthGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 		})
 	})

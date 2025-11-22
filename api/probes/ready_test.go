@@ -23,7 +23,7 @@ var _ = Describe("/readyz", func() {
 			}
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.RespondWithContext(c, handler.HandleReadyGet)).ToNot(HaveOccurred())
+			Expect(ctx.Respond(c, handler.HandleReadyGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 		})
 
@@ -37,7 +37,7 @@ var _ = Describe("/readyz", func() {
 			}
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.RespondWithContext(c, handler.HandleReadyGet)).To(HaveOccurred())
+			Expect(ctx.Respond(c, handler.HandleReadyGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusServiceUnavailable))
 		})
 	})

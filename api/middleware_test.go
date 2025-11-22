@@ -39,7 +39,7 @@ var _ = Describe("Middleware", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(a.Echo, req, a.GetMiddlewares()...)
 
-		Expect(ctx.RespondWithContext(c, h)).ToNot(HaveOccurred())
+		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusInternalServerError))
 	})
 })

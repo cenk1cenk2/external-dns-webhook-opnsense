@@ -8,18 +8,18 @@ type HandlerFunc func(c *Context) error
 
 func With(h HandlerFunc, with ...interface{}) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		return RunWithContext(c, h, with...)
+		return Run(c, h, with...)
 	}
 }
 
-func RunWithContext(c echo.Context, h HandlerFunc, with ...interface{}) error {
+func Run(c echo.Context, h HandlerFunc, with ...interface{}) error {
 	cc := NewContext(c, with...)
 
 	return h(cc)
 }
 
-func RespondWithContext(c echo.Context, h HandlerFunc, with ...interface{}) error {
-	err := RunWithContext(c, h, with...)
+func Respond(c echo.Context, h HandlerFunc, with ...interface{}) error {
+	err := Run(c, h, with...)
 	if err != nil {
 		c.Echo()
 		c.Error(err)
