@@ -68,7 +68,7 @@ func (a *Api) IsReady() chan bool {
 func (a *Api) GetListener() chan net.Listener {
 	log := a.Log.WithCaller()
 	listener := make(chan net.Listener, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	go func() {
@@ -80,10 +80,8 @@ func (a *Api) GetListener() chan net.Listener {
 		}
 	}()
 
-	for {
-		if a.Echo.Listener != nil {
-			break
-		}
+	//nolint: staticcheck
+	for a.Echo.Listener == nil {
 	}
 
 	listener <- a.Echo.Listener
