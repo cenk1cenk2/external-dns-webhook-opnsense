@@ -27,7 +27,8 @@ tasks:
           BINARY_NAME: external-dns-webhook-opnsense
           BINARY_APPEND_OS: false
           BINARY_APPEND_ARCH: false
-          flags: "{{ .CLI_FLAGS }}"
+          flags: "{{ .CLI_ARGS }}"
+          GO_LD_FLAGS: ""
 
   watch:
     desc: Build and watch for changes to rebuild the application.
