@@ -29,12 +29,12 @@ func NewHandler(svc *HandlerSvc) *Handler {
 
 func (h *Handler) VerifyHeaders(c *ctx.Context) error {
 	accept := c.Request().Header.Get(echo.HeaderAccept)
-	if accept == "" || !strings.Contains(accept, "application/external.dns.webhook+json;version=1") {
+	if !strings.Contains(accept, "application/external.dns.webhook+json;version=1") {
 		return c.NoContent(http.StatusNotAcceptable)
 	}
 
 	content := c.Request().Header.Get(echo.HeaderContentType)
-	if content == "" || !strings.Contains(content, echo.MIMEApplicationJSON) {
+	if !strings.Contains(content, echo.MIMEApplicationJSON) {
 		return c.NoContent(http.StatusUnsupportedMediaType)
 	}
 
