@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"net"
 	"slices"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 
 type DnsRecord struct {
 	unbound.SearchHostOverrideItem
-	RecordType string
 }
 
 func NewDnsRecord(override unbound.SearchHostOverrideItem) *DnsRecord {
@@ -39,16 +37,6 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 
 	if record.Hostname == "*" {
 		return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
-	}
-
-	ip := net.ParseIP(record.Server)
-
-	if ip.To4() != nil {
-		record.RecordType = endpoint.RecordTypeA
-	} else if ip.To16() != nil {
-		record.RecordType = endpoint.RecordTypeAAAA
-	} else {
-		return nil, fmt.Errorf("invalid record type: %s", record.Server)
 	}
 
 	return record, nil

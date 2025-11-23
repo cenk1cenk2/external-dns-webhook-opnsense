@@ -30,12 +30,19 @@ func NewHandler(svc *HandlerSvc) *Handler {
 func (h *Handler) VerifyHeaders(c *ctx.Context) error {
 	accept := c.Request().Header.Get(echo.HeaderAccept)
 	if !strings.Contains(accept, "application/external.dns.webhook+json;version=1") {
+		c.Log.Debugf("does not containt: %s", accept)
+
 		return c.NoContent(http.StatusNotAcceptable)
+	} else {
+		c.Log.Debugf("Content-Type: %s", accept)
 	}
 
 	content := c.Request().Header.Get(echo.HeaderContentType)
 	if !strings.Contains(content, echo.MIMEApplicationJSON) {
+		c.Log.Debugf("does not containt: %s", content)
 		return c.NoContent(http.StatusUnsupportedMediaType)
+	} else {
+		c.Log.Debugf("Content-Type: %s", content)
 	}
 
 	return nil

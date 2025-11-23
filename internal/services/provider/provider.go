@@ -70,7 +70,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 		ep := endpoint.
 			NewEndpoint(
 				record.GetFQDN(),
-				record.RecordType,
+				record.Type,
 				record.GetFQDN(),
 			).
 			WithProviderSpecific(
@@ -81,7 +81,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
-		if !record.IsDrifted() {
+		if record.IsDrifted() {
 			p.Log.Debugf("Record has drifted, will fix at next adjust: %s", record.GetFQDN())
 
 			ep.WithProviderSpecific(
