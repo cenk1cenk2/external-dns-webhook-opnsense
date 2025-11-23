@@ -1,6 +1,7 @@
 package webhook_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +15,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
+	"sigs.k8s.io/external-dns/endpoint"
 )
 
 var _ = Describe("records", func() {
@@ -45,7 +47,10 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
-			Expect(res.Body).To(MatchJSON(`[]`))
+
+			var body []endpoint.Endpoint
+			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(body).To(BeEmpty())
 		})
 
 		It("should be able to fetch and convert all the records", func() {
@@ -77,21 +82,20 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
-			Expect(res.Body).To(MatchJSON(`[
-        {
-          "dnsName": "example.local",
-          "targets": [
-            "example.local"
-          ],
-          "recordType": "A",
-          "providerSpecific": [
-            {
-              "name": "opnsense.record.uuid",
-              "value": "id"
-            }
-          ]
-        }
-      ]`))
+
+			var body []endpoint.Endpoint
+			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(body).To(HaveLen(1))
+
+			Expect(body[0].DNSName).To(Equal("example.local"))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"example.local"}))
+			Expect(body[0].RecordType).To(Equal("A"))
+			Expect(body[0].ProviderSpecific).To(ContainElements(
+				endpoint.ProviderSpecificProperty{
+					Name:  "opnsense.record.uuid",
+					Value: "id",
+				},
+			))
 		})
 
 		It("should be able to fetch and convert records with ownership", func() {
@@ -124,28 +128,24 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
-			Expect(res.Body).To(MatchJSON(`[
-        {
-          "dnsName": "example.local",
-          "targets": [
-            "example.local"
-          ],
-          "recordType": "A",
-          "providerSpecific": [
-            {
-              "name": "opnsense.record.uuid",
-              "value": "id"
-            }
-          ]
-        },
-        {
-          "dnsName": "external-dns",
-          "targets": [
-            "example.local"
-          ],
-          "recordType": "TXT"
-        }
-      ]`))
+
+			var body []endpoint.Endpoint
+			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(body).To(HaveLen(2))
+
+			Expect(body[0].DNSName).To(Equal("example.local"))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"example.local"}))
+			Expect(body[0].RecordType).To(Equal("A"))
+			Expect(body[0].ProviderSpecific).To(ContainElements(
+				endpoint.ProviderSpecificProperty{
+					Name:  "opnsense.record.uuid",
+					Value: "id",
+				},
+			))
+
+			Expect(body[1].DNSName).To(Equal("external-dns"))
+			Expect(body[1].Targets).To(BeEquivalentTo([]string{"example.local"}))
+			Expect(body[1].RecordType).To(Equal("TXT"))
 		})
 	})
 })
