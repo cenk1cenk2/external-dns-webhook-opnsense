@@ -3,8 +3,8 @@ template: testify
 packages:
   github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense:
     config:
-      dir: test/mocks/internal/services
+      dir: test/mocks/services
       filename: opnsense.go
       force-file-write: true
-      pkgname: mockservices_test
+      pkgname: mockservices
       all: true

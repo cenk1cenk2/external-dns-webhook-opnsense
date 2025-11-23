@@ -59,12 +59,21 @@ func (o *OwnershipRecord) IntoEndpoint() (*endpoint.Endpoint, error) {
 }
 
 func (o *OwnershipRecord) SetOwnedByForDnsRecord(record *DnsRecord) error {
-	ownership, err := json.Marshal(o)
+	ownership, err := o.GetOwnedBy()
 	if err != nil {
-		return fmt.Errorf("failed to marshal ownership info: %w", err)
+		return fmt.Errorf("failed to get ownership info: %w", err)
 	}
 
-	record.Description = string(ownership)
+	record.Description = ownership
 
 	return nil
+}
+
+func (o *OwnershipRecord) GetOwnedBy() (string, error) {
+	ownership, err := json.Marshal(o)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal ownership info: %w", err)
+	}
+
+	return string(ownership), nil
 }

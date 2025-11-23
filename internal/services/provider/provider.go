@@ -21,7 +21,6 @@ type Provider struct {
 
 	Log          services.ZapSugaredLogger
 	Client       opnsense.ClientAdapter
-	Ownership    *OwnershipRecord
 	DomainFilter endpoint.DomainFilterInterface
 }
 

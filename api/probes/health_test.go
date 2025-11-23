@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("/healthz", func() {
+var _ = Describe("healthz", func() {
 	Context("GET", func() {
 		It("should return http.StatusOK when ready", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))

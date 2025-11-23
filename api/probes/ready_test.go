@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("/readyz", func() {
+var _ = Describe("readyz", func() {
 	Context("GET", func() {
 		It("should return http.StatusOK when not ready", func() {
 			handler.IsReady = func() chan bool {

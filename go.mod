@@ -6,6 +6,7 @@ require (
 	github.com/browningluke/opnsense-go v0.15.0
 	github.com/creasty/defaults v1.8.0
 	github.com/go-playground/validator/v10 v10.28.0
+	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/karagenc/zap4echo v0.1.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/onsi/ginkgo/v2 v2.27.2
@@ -37,7 +38,6 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gnostic-models v0.7.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
@@ -102,4 +102,4 @@ require (
 
 tool github.com/onsi/ginkgo/v2/ginkgo
 
-replace github.com/browningluke/opnsense-go => ../opnsense-go
+replace github.com/browningluke/opnsense-go => github.com/cenk1cenk2/opnsense-go v0.0.0-20251123210232-53ab58300553
