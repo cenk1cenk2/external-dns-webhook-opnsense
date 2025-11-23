@@ -6,3 +6,4 @@ go.sum
 .gitlab-ci.yml
 .air.toml
 .golangci.yml
+/test

@@ -20,6 +20,8 @@ includes:
 tasks:
   build:
     desc: Build the application.
+    deps:
+      - task: generate
     cmds:
       - task: build.platform
         vars:
@@ -35,3 +37,21 @@ tasks:
     cmds:
       - |
         air -c .air.toml
+
+  generate:
+    desc: Generate all the files required for the tests.
+    cmds:
+      - task: generate:mockery
+
+  generate:mockery:
+    internal: true
+    cmds:
+      - mockery
+    generates:
+      - ./test/mocks/**
+    sources:
+      # NOTE: mockery is slow
+      # - ./**/*.go
+      - .mockery.yaml
+      - go.{sum,mod}
+      - exclude: "test/mocks/**"

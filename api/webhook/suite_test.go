@@ -1,9 +1,9 @@
-package probes_test
+package webhook_test
 
 import (
 	"testing"
 
-	h "github.com/cenk1cenk2/external-dns-webhook-opnsense/api/probes"
+	h "github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -12,7 +12,7 @@ import (
 
 func TestSuite(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "API Health Probes")
+	RunSpecs(t, "API Webhook")
 }
 
 var handler *h.Handler

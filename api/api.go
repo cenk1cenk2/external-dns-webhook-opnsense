@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,7 +18,8 @@ type Api struct {
 }
 
 type ApiConfig struct {
-	SwaggerUIBasePath string
+	OpnsenseClient opnsense.OpnsenseClientConfig
+	Provider       provider.ProviderConfig
 }
 
 type ApiSvc struct {

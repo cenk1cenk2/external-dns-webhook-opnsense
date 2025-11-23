@@ -1,5 +1,5 @@
 [tools]
-air = "latest"
 "go:github.com/air-verse/air" = "latest"
 "go:github.com/go-delve/delve/cmd/dlv" = "latest"
 "go:github.com/go-task/task/v3/cmd/task" = "latest"
+"go:github.com/vektra/mockery/v3" = "latest"

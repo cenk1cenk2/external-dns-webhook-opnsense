@@ -1,0 +1,10 @@
+log-level: info
+template: testify
+packages:
+  github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense:
+    config:
+      dir: test/mocks/internal/services
+      filename: opnsense.go
+      force-file-write: true
+      pkgname: mockservices_test
+      all: true
