@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("Opnsense Client", func() {
 	It("should create a new client", func(ctx SpecContext) {
-		client, err := opnsense.NewOpnsenseClient(
+		client, err := opnsense.NewClient(
 			&opnsense.OpnsenseClientSvc{
 				Logger: fixtures.NewTestLogger(),
 			},
@@ -31,31 +31,31 @@ var _ = Describe("Opnsense Client", func() {
 
 	Context("dry run client", func() {
 		var (
-			client *opnsense.OpnsenseClient
+			client *opnsense.Client
 		)
 
 		BeforeEach(func() {
-			client = &opnsense.OpnsenseClient{
+			client = &opnsense.Client{
 				Log:    fixtures.NewTestLogger().Sugar(),
 				Config: opnsense.OpnsenseClientConfig{DryRun: true},
 			}
 		})
 
 		It("should not modify anything on create", func(ctx SpecContext) {
-			uuid, err := client.CreateHostOverride(ctx, &unbound.HostOverride{})
+			uuid, err := client.UnboundCreateHostOverride(ctx, &unbound.HostOverride{})
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(uuid).To(Equal(""))
 		})
 
 		It("should not modify anything on update", func(ctx SpecContext) {
-			err := client.UpdateHostOverride(ctx, "", &unbound.HostOverride{})
+			err := client.UnboundUpdateHostOverride(ctx, "", &unbound.HostOverride{})
 
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should not modify anything on delete", func(ctx SpecContext) {
-			err := client.DeleteHostOverride(ctx, "")
+			err := client.UnboundDeleteHostOverride(ctx, "")
 
 			Expect(err).ToNot(HaveOccurred())
 		})

@@ -9,16 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
-type OpnsenseClientAdapter interface {
-	SearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error)
-	CreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error)
-	UpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error
-	DeleteHostOverride(ctx context.Context, uuid string) error
+type ClientAdapter interface {
+	UnboundSearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error)
+	UnboundCreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error)
+	UnboundUpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error
+	UnboundDeleteHostOverride(ctx context.Context, uuid string) error
 }
 
-type OpnsenseClient struct {
-	client     *api.Client
-	controller unbound.Controller
+type Client struct {
+	client  *api.Client
+	unbound unbound.Controller
 
 	Log    services.ZapSugaredLogger
 	Config OpnsenseClientConfig
@@ -34,21 +34,28 @@ type OpnsenseClientConfig struct {
 	DryRun bool
 }
 
-var _ OpnsenseClientAdapter = (*OpnsenseClient)(nil)
+var _ ClientAdapter = (*Client)(nil)
 
-func NewOpnsenseClient(svc *OpnsenseClientSvc, conf OpnsenseClientConfig) (*OpnsenseClient, error) {
+func NewClient(svc *OpnsenseClientSvc, conf OpnsenseClientConfig) (*Client, error) {
 	client := api.NewClient(conf.Options)
 
-	return &OpnsenseClient{
-		client:     client,
-		controller: unbound.Controller{Api: client},
-		Config:     conf,
-		Log:        svc.Logger.WithCaller().With(zap.String("service", "opnsense")),
+	log := svc.Logger.WithCaller().With(zap.String("service", "opnsense"))
+
+	if conf.DryRun {
+		log.Warnln("Dryrun mode enabled: no changes will be applied to OPNsense.")
+	}
+	conf.Logger = nil
+
+	return &Client{
+		client:  client,
+		unbound: unbound.Controller{Api: client},
+		Config:  conf,
+		Log:     log,
 	}, nil
 }
 
-func (c *OpnsenseClient) SearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error) {
-	result, err := c.controller.SearchHostOverride(ctx, "-1")
+func (c *Client) UnboundSearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error) {
+	result, err := c.unbound.SearchHostOverride(ctx, "-1")
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +65,7 @@ func (c *OpnsenseClient) SearchHostOverrides(ctx context.Context) (*unbound.Sear
 	return result, nil
 }
 
-func (c *OpnsenseClient) CreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error) {
+func (c *Client) UnboundCreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error) {
 	c.Log.Debugf("Creating host override: for %s.%s -> %+v", req.Hostname, req.Domain, req)
 
 	if c.Config.DryRun {
@@ -67,10 +74,10 @@ func (c *OpnsenseClient) CreateHostOverride(ctx context.Context, req *unbound.Ho
 		return "", nil
 	}
 
-	return c.controller.AddHostOverride(ctx, req)
+	return c.unbound.AddHostOverride(ctx, req)
 }
 
-func (c *OpnsenseClient) UpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error {
+func (c *Client) UnboundUpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error {
 	c.Log.Debugf("Updating host override: %s -> %+v", uuid, req)
 
 	if c.Config.DryRun {
@@ -79,10 +86,10 @@ func (c *OpnsenseClient) UpdateHostOverride(ctx context.Context, uuid string, re
 		return nil
 	}
 
-	return c.controller.UpdateHostOverride(ctx, uuid, req)
+	return c.unbound.UpdateHostOverride(ctx, uuid, req)
 }
 
-func (c *OpnsenseClient) DeleteHostOverride(ctx context.Context, uuid string) error {
+func (c *Client) UnboundDeleteHostOverride(ctx context.Context, uuid string) error {
 	c.Log.Debugf("Deleting host override: %s", uuid)
 
 	if c.Config.DryRun {
@@ -90,5 +97,5 @@ func (c *OpnsenseClient) DeleteHostOverride(ctx context.Context, uuid string) er
 		return nil
 	}
 
-	return c.controller.DeleteHostOverride(ctx, uuid)
+	return c.unbound.DeleteHostOverride(ctx, uuid)
 }

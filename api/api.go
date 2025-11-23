@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net"
 	"time"
 
@@ -18,13 +19,14 @@ type Api struct {
 }
 
 type ApiConfig struct {
-	OpnsenseClient opnsense.OpnsenseClientConfig
-	Provider       provider.ProviderConfig
 }
 
 type ApiSvc struct {
 	Log       *services.Logger
 	Validator *services.Validator
+
+	Provider       *provider.Provider
+	OpnsenseClient *opnsense.Client
 }
 
 func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
@@ -76,15 +78,14 @@ func (a *Api) GetListener() chan net.Listener {
 
 	go func() {
 		<-ctx.Done()
-		err := ctx.Err()
 
-		if err != nil && err != context.Canceled {
+		if err := ctx.Err(); err != nil && !errors.Is(err, context.Canceled) {
 			log.Panicf("Listener not ready: %w", err)
 		}
 	}()
 
-	//nolint: staticcheck
 	for a.Echo.Listener == nil {
+		time.Sleep(0)
 	}
 
 	listener <- a.Echo.Listener

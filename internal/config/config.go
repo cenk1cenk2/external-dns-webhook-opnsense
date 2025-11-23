@@ -2,6 +2,8 @@ package config
 
 import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 )
 
 type Config struct {
@@ -11,6 +13,9 @@ type Config struct {
 	Port uint16
 
 	Api api.ApiConfig
+
+	OpnsenseClient opnsense.OpnsenseClientConfig
+	Provider       provider.ProviderConfig
 }
 
 func NewConfig() *Config {

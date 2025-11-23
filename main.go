@@ -12,6 +12,8 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/config"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/urfave/cli/v3"
 )
 
@@ -38,9 +40,34 @@ func main() {
 				return err
 			}
 
+			// TODO: add a check for opnsense client to do a health call
+
+			client, err := opnsense.NewClient(
+				&opnsense.OpnsenseClientSvc{
+					Logger: logger,
+				},
+				conf.OpnsenseClient,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to create opnsense client: %w", err)
+			}
+
+			provider, err := provider.NewProvider(
+				&provider.ProviderSvc{
+					Client: client,
+					Logger: logger,
+				},
+				conf.Provider,
+			)
+			if err != nil {
+				return fmt.Errorf("failed to create provider: %w", err)
+			}
+
 			a := api.NewApi(&api.ApiSvc{
-				Log:       logger,
-				Validator: validator,
+				Log:            logger,
+				Validator:      validator,
+				OpnsenseClient: client,
+				Provider:       provider,
 			}, conf.Api)
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -66,6 +93,8 @@ func main() {
 	}
 
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+
+		os.Exit(1)
 	}
 }

@@ -10,23 +10,23 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
-type Record struct {
+type DnsRecord struct {
 	unbound.SearchHostOverrideItem
 	RecordType string
 }
 
-func NewRecord(override unbound.SearchHostOverrideItem) *Record {
-	return &Record{
+func NewDnsRecord(override unbound.SearchHostOverrideItem) *DnsRecord {
+	return &DnsRecord{
 		SearchHostOverrideItem: override,
 	}
 }
 
-func NewRecordFromEndpoint(ep *endpoint.Endpoint) (*Record, error) {
+func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 	if slices.Contains([]string{endpoint.RecordTypeA, endpoint.RecordTypeAAAA}, ep.RecordType) {
 		return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
 	}
 
-	record := &Record{
+	record := &DnsRecord{
 		SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 			Enabled: "1",
 		},
@@ -54,13 +54,13 @@ func NewRecordFromEndpoint(ep *endpoint.Endpoint) (*Record, error) {
 	return record, nil
 }
 
-func NewRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*Record, error) {
+func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 	id, exists := ep.GetProviderSpecificProperty(ProviderSpecificUUID.String())
 	if !exists {
 		return nil, fmt.Errorf("provider specific id not found attached to the endpoint")
 	}
 
-	record, err := NewRecordFromEndpoint(ep)
+	record, err := NewDnsRecordFromEndpoint(ep)
 	if err != nil {
 		return nil, err
 	}
@@ -70,38 +70,19 @@ func NewRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*Record, error) {
 	return record, nil
 }
 
-func (r *Record) IsEnabled() bool {
+func (r *DnsRecord) IsEnabled() bool {
 	return r.Enabled == "1"
 }
 
-func (r *Record) IsDrifted() bool {
+func (r *DnsRecord) IsDrifted() bool {
 	return !r.IsEnabled()
 }
 
-func (r *Record) GetFQDN() string {
+func (r *DnsRecord) GetFQDN() string {
 	return fmt.Sprintf("%s.%s", r.Hostname, r.Domain)
 }
 
-func (r *Record) GetOwner() string {
-	return r.Description
-}
-
-func (r *Record) IsOwnedBy(ownership *Ownership) (bool, error) {
-	return ownership.IsOwnedRecord(r)
-}
-
-func (r *Record) SetOwnedBy(ownership *Ownership) error {
-	owned, err := ownership.ToOwnedRecord(r)
-	if err != nil {
-		return fmt.Errorf("failed to set ownership: %w", err)
-	}
-
-	r.Description = owned
-
-	return nil
-}
-
-func (r *Record) IntoHostOverride() *unbound.HostOverride {
+func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
 	return &unbound.HostOverride{
 		Enabled:     r.Enabled,
 		Hostname:    r.Hostname,

@@ -49,17 +49,17 @@ func GetFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       false,
-			Destination: &c.Api.OpnsenseClient.DryRun,
+			Destination: &c.OpnsenseClient.DryRun,
 		},
 
 		&cli.StringFlag{
-			Name:  "opnsense-uri",
+			Name:  "opnsense-url",
 			Usage: "The base URI of the OPNsense API endpoint.",
 			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("OPNSENSE_URI"),
+				cli.EnvVar("OPNSENSE_URL"),
 			),
 			Required:    true,
-			Destination: &c.Api.OpnsenseClient.Options.Uri,
+			Destination: &c.OpnsenseClient.Options.Uri,
 		},
 
 		&cli.StringFlag{
@@ -69,7 +69,7 @@ func GetFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_API_KEY"),
 			),
 			Required:    true,
-			Destination: &c.Api.OpnsenseClient.Options.APIKey,
+			Destination: &c.OpnsenseClient.Options.APIKey,
 		},
 
 		&cli.StringFlag{
@@ -79,7 +79,7 @@ func GetFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_API_SECRET"),
 			),
 			Required:    true,
-			Destination: &c.Api.OpnsenseClient.Options.APISecret,
+			Destination: &c.OpnsenseClient.Options.APISecret,
 		},
 
 		&cli.BoolFlag{
@@ -90,7 +90,7 @@ func GetFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       false,
-			Destination: &c.Api.OpnsenseClient.Options.AllowInsecure,
+			Destination: &c.OpnsenseClient.Options.AllowInsecure,
 		},
 
 		&cli.Int64Flag{
@@ -101,7 +101,7 @@ func GetFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       120,
-			Destination: &c.Api.OpnsenseClient.Options.MaxBackoff,
+			Destination: &c.OpnsenseClient.Options.MaxBackoff,
 		},
 
 		&cli.Int64Flag{
@@ -112,7 +112,7 @@ func GetFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       120,
-			Destination: &c.Api.OpnsenseClient.Options.MinBackoff,
+			Destination: &c.OpnsenseClient.Options.MinBackoff,
 		},
 
 		&cli.Int64Flag{
@@ -123,27 +123,71 @@ func GetFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       120,
-			Destination: &c.Api.OpnsenseClient.Options.MaxRetries,
+			Destination: &c.OpnsenseClient.Options.MaxRetries,
+		},
+
+		// match with upstream: https://github.com/kubernetes-sigs/external-dns/blob/master/docs/flags.md
+
+		&cli.StringSliceFlag{
+			Name:  "domain-filter",
+			Usage: "List of domain include filters.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("DOMAIN_FILTER"),
+			),
+			Required:    false,
+			Destination: &c.Provider.DomainFilter.DomainFilter,
 		},
 
 		&cli.StringSliceFlag{
-			Name:  "domain-include-filter",
-			Usage: "List of domain include filters. Only domains matching these filters will be managed. Can be specified multiple times.",
+			Name:  "exclude-domains",
+			Usage: "List of domain exclude filters.",
 			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("DOMAIN_INCLUDE_FILTER"),
+				cli.EnvVar("EXCLUDE_DOMAINS"),
 			),
 			Required:    false,
-			Destination: &c.Api.Provider.DomainIncludeFilter,
+			Destination: &c.Provider.DomainFilter.ExcludeDomains,
 		},
 
-		&cli.StringSliceFlag{
-			Name:  "domain-exclude-filter",
-			Usage: "List of domain exclude filters. Domains matching these filters will be ignored. Can be specified multiple times.",
+		&cli.StringFlag{
+			Name:  "regex-domain-filter",
+			Usage: "List of domain exclude filters in regex form.",
 			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("DOMAIN_EXCLUDE_FILTER"),
+				cli.EnvVar("REGEX_DOMAIN_FILTER"),
 			),
 			Required:    false,
-			Destination: &c.Api.Provider.DomainExcludeFilter,
+			Destination: &c.Provider.DomainFilter.RegexDomainFilter,
+		},
+
+		&cli.StringFlag{
+			Name:  "regex-domain-exclusion",
+			Usage: "List of domain exclude filters in regex form.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("REGEX_DOMAIN_EXCLUSION"),
+			),
+			Required:    false,
+			Destination: &c.Provider.DomainFilter.RegexDomainExclusion,
+		},
+
+		&cli.StringFlag{
+			Name:  "txt-prefix",
+			Usage: "Prefix for TXT records used for ownership verification. format(template)",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("TXT_PREFIX"),
+			),
+			Required:    false,
+			Value:       "{{ .RecordType }}-",
+			Destination: &c.Provider.TxtPrefix,
+		},
+
+		&cli.StringFlag{
+			Name:  "txt-suffix",
+			Usage: "Suffix for TXT records used for ownership verification. format(template)",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("TXT_SUFFIX"),
+			),
+			Required:    false,
+			Value:       "",
+			Destination: &c.Provider.TxtSuffix,
 		},
 	}
 }
