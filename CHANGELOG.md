@@ -1,3 +1,11 @@
+## [1.0.2](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.1...v1.0.2) (2025-11-24)
+
+
+### Bug Fixes
+
+* add tag file publishing as well ([ad9f39d](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/ad9f39dd2a13e68cbc2e03e1fc860a9067929cc6))
+* bring back package.json for semantic release ([478304b](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/478304b3075f77eac76f8d5c54308d5b52d69727))
+
 ## [1.0.1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.0...v1.0.1) (2025-11-24)
 
 
