@@ -7,12 +7,12 @@ stages:
 
 include:
   - project: devops/pipelines
-    ref: go@1.5.0
+    ref: go@1.5.1
     file:
       - /go/install.gitlab-ci.yml
-      - /go/build.gitlab-ci.yml
       - /go/lint.gitlab-ci.yml
       - /go/test.gitlab-ci.yml
+      - /go/build.gitlab-ci.yml
     inputs:
       version: 1.25-alpine
 
@@ -54,6 +54,10 @@ test:
 
 build:
   stage: build
+  variables:
+    GO_BUILD_LINKER: -w -s
+    GO_BUILD_VARIABLES: |-
+      main.VERSION: BUILD.{{ now | date "2006-01-02T15:04:05Z0700" }}
   extends:
     - .go-build
 
