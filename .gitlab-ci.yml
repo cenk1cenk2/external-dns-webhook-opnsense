@@ -25,10 +25,14 @@ include:
     ref: buildah@1.1.2
     file:
       - /buildah/build.gitlab-ci.yml
-      - /buildah/registry-dockerhub.gitlab-ci.yml
     inputs:
       rules:
         - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+  - project: devops/pipelines
+    ref: buildah@1.1.2
+    file:
+      - /buildah/registry-dockerhub.gitlab-ci.yml
 
 variables:
   TAGS_FILE: .tags
