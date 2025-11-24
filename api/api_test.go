@@ -41,8 +41,6 @@ var _ = Describe("API", func() {
 				Expect(err).To(Equal(http.ErrServerClosed))
 			}()
 
-			<-a.IsReady()
-
 			Expect(a.Shutdown()).ToNot(HaveOccurred())
 		})
 
