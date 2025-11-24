@@ -15,6 +15,8 @@ import (
 type Api struct {
 	Config ApiConfig
 	Echo   *echo.Echo
+	log    services.ZapSugaredLogger
+
 	*ApiSvc
 }
 
@@ -22,7 +24,7 @@ type ApiConfig struct {
 }
 
 type ApiSvc struct {
-	Log       *services.Logger
+	Logger    *services.Logger
 	Validator *services.Validator
 
 	Provider       *provider.Provider
@@ -38,6 +40,7 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 		Config: conf,
 		Echo:   e,
 		ApiSvc: svc,
+		log:    svc.Logger.WithCaller(),
 	}
 
 	a.SetupMiddleware()
@@ -47,15 +50,13 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 }
 
 func (a *Api) Start(address string) chan error {
-	log := a.Log.WithCaller()
-
 	err := make(chan error)
 
 	go func() {
 		err <- a.Echo.Start(address)
 	}()
 
-	log.Infof("Starting server at address: %s", (<-a.GetListener()).Addr().String())
+	a.log.Infof("Starting server at address: %s", (<-a.GetListener()).Addr().String())
 
 	return err
 }
@@ -65,13 +66,20 @@ func (a *Api) IsReady() chan bool {
 
 	<-a.GetListener()
 
+	if err := a.OpnsenseClient.CheckUnboundService(context.Background()); err != nil {
+		a.log.Errorf("Unbound service is not running: %v", err)
+
+		res <- false
+
+		return res
+	}
+
 	res <- true
 
 	return res
 }
 
 func (a *Api) GetListener() chan net.Listener {
-	log := a.Log.WithCaller()
 	listener := make(chan net.Listener, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -80,7 +88,7 @@ func (a *Api) GetListener() chan net.Listener {
 		<-ctx.Done()
 
 		if err := ctx.Err(); err != nil && !errors.Is(err, context.Canceled) {
-			log.Panicf("Listener not ready: %w", err)
+			a.log.Panicf("Listener not ready: %w", err)
 		}
 	}()
 

@@ -26,7 +26,7 @@ var _ = Describe("API", func() {
 			validator := services.NewValidator()
 
 			a = api.NewApi(&api.ApiSvc{
-				Log:       logger,
+				Logger:    logger,
 				Validator: validator,
 			}, c.Api)
 			Expect(a).ToNot(BeNil())
@@ -82,7 +82,7 @@ var _ = Describe("API", func() {
 			validator := services.NewValidator()
 
 			a = api.NewApi(&api.ApiSvc{
-				Log:       logger,
+				Logger:    logger,
 				Validator: validator,
 			}, c.Api)
 			Expect(a).ToNot(BeNil())
@@ -128,7 +128,7 @@ var _ = Describe("API", func() {
 			validator := services.NewValidator()
 
 			a = api.NewApi(&api.ApiSvc{
-				Log:       logger,
+				Logger:    logger,
 				Validator: validator,
 			}, c.Api)
 			Expect(a).ToNot(BeNil())

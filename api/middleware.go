@@ -16,16 +16,15 @@ import (
 func (a *Api) SetupMiddleware() {
 	e := a.Echo
 	e.Validator = a.Validator
-	log := a.Log.WithCaller()
 
 	e.OnAddRouteHandler = func(host string, route echo.Route, handler echo.HandlerFunc, middleware []echo.MiddlewareFunc) {
-		log.Debugf("Registered route: %s %s -> %s", route.Method, route.Path, route.Name)
+		a.log.Debugf("Registered route: %s %s -> %s", route.Method, route.Path, route.Name)
 	}
 
 	e.Use(a.GetMiddlewares()...)
 
-	if a.Log.Level() <= zapcore.DebugLevel {
-		log.Warnln("Enabled debug mode in echo.")
+	if a.Logger.Level() <= zapcore.DebugLevel {
+		a.log.Warnln("Enabled debug mode in echo.")
 		e.Debug = true
 	}
 
@@ -34,10 +33,10 @@ func (a *Api) SetupMiddleware() {
 
 func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 	return []echo.MiddlewareFunc{
-		zap4echo.RecoverWithConfig(a.Log.Logger, zap4echo.RecoverConfig{
+		zap4echo.RecoverWithConfig(a.Logger.Logger, zap4echo.RecoverConfig{
 			CustomRequestIDHeader: echo.HeaderXRequestID,
 		}),
-		zap4echo.LoggerWithConfig(a.Log.Logger, zap4echo.LoggerConfig{
+		zap4echo.LoggerWithConfig(a.Logger.Logger, zap4echo.LoggerConfig{
 			CustomRequestIDHeader: echo.HeaderXRequestID,
 			IncludeCaller:         true,
 			OmitReferer:           true,

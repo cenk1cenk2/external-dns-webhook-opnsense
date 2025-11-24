@@ -9,13 +9,13 @@ func (a *Api) RegisterRoutes() {
 	group := a.Echo.Group("")
 
 	probes.NewHandler(&probes.HandlerSvc{
-		Log:     a.Log,
+		Log:     a.Logger,
 		IsReady: a.IsReady,
 	}).
 		RegisterRoutes(group)
 
 	webhook.NewHandler(&webhook.HandlerSvc{
-		Log:      a.Log,
+		Log:      a.Logger,
 		Provider: a.Provider,
 	}).
 		RegisterRoutes(group)

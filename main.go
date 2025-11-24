@@ -64,7 +64,7 @@ func main() {
 			}
 
 			a := api.NewApi(&api.ApiSvc{
-				Log:            logger,
+				Logger:            logger,
 				Validator:      validator,
 				OpnsenseClient: client,
 				Provider:       provider,

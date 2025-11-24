@@ -2,26 +2,30 @@ package opnsense
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/browningluke/opnsense-go/pkg/api"
-	"github.com/browningluke/opnsense-go/pkg/unbound"
+	opnsensecore "github.com/browningluke/opnsense-go/pkg/core"
+	opnsenseunbound "github.com/browningluke/opnsense-go/pkg/unbound"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"go.uber.org/zap"
 )
 
 type ClientAdapter interface {
-	UnboundSearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error)
-	UnboundCreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error)
-	UnboundUpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error
+	CheckUnboundService(ctx context.Context) error
+	UnboundSearchHostOverrides(ctx context.Context) (*opnsenseunbound.SearchHostOverrideResponse, error)
+	UnboundCreateHostOverride(ctx context.Context, req *opnsenseunbound.HostOverride) (string, error)
+	UnboundUpdateHostOverride(ctx context.Context, uuid string, req *opnsenseunbound.HostOverride) error
 	UnboundDeleteHostOverride(ctx context.Context, uuid string) error
 }
 
 type Client struct {
-	client  *api.Client
-	unbound unbound.Controller
-
 	Log    services.ZapSugaredLogger
 	Config OpnsenseClientConfig
+
+	client  *api.Client
+	core    opnsensecore.Controller
+	unbound opnsenseunbound.Controller
 }
 
 type OpnsenseClientSvc struct {
@@ -48,13 +52,29 @@ func NewClient(svc *OpnsenseClientSvc, conf OpnsenseClientConfig) (*Client, erro
 
 	return &Client{
 		client:  client,
-		unbound: unbound.Controller{Api: client},
+		core:    opnsensecore.Controller{Api: client},
+		unbound: opnsenseunbound.Controller{Api: client},
 		Config:  conf,
 		Log:     log,
 	}, nil
 }
 
-func (c *Client) UnboundSearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error) {
+func (c *Client) CheckUnboundService(ctx context.Context) error {
+	s, err := c.core.ServiceSearch(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, service := range s.Rows {
+		if service.Name == "unbound" && service.Running == 1 {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("unbound service is not running")
+}
+
+func (c *Client) UnboundSearchHostOverrides(ctx context.Context) (*opnsenseunbound.SearchHostOverrideResponse, error) {
 	result, err := c.unbound.SearchHostOverride(ctx, "-1")
 	if err != nil {
 		return nil, err
@@ -65,7 +85,7 @@ func (c *Client) UnboundSearchHostOverrides(ctx context.Context) (*unbound.Searc
 	return result, nil
 }
 
-func (c *Client) UnboundCreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error) {
+func (c *Client) UnboundCreateHostOverride(ctx context.Context, req *opnsenseunbound.HostOverride) (string, error) {
 	c.Log.Debugf("Creating host override: for %s.%s -> %+v", req.Hostname, req.Domain, req)
 
 	if c.Config.DryRun {
@@ -77,7 +97,7 @@ func (c *Client) UnboundCreateHostOverride(ctx context.Context, req *unbound.Hos
 	return c.unbound.AddHostOverride(ctx, req)
 }
 
-func (c *Client) UnboundUpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error {
+func (c *Client) UnboundUpdateHostOverride(ctx context.Context, uuid string, req *opnsenseunbound.HostOverride) error {
 	c.Log.Debugf("Updating host override: %s -> %+v", uuid, req)
 
 	if c.Config.DryRun {
