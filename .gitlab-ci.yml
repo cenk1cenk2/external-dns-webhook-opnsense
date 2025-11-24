@@ -73,6 +73,7 @@ publish:
   variables:
     CONTAINER_IMAGE_NAME: cenk1cenk2/external-dns-webhook-opnsense
     CONTAINER_IMAGE_TAGS: snapshot
-    GO_BUILD_BINARY_TEMPLATE: "{{ .name }}"
+    CONTAINER_IMAGE_BUILD_ARGS: |-
+      BIN: external-dns-webhook-opnsense-linux-amd64
   extends:
     - .container-build

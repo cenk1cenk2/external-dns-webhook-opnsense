@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile-upstream:master-labs
 FROM scratch
 
-COPY --chmod=777 ./dist/external-dns-webhook-opnsense /usr/bin/external-dns-webhook-opnsense
+ARG BIN=./dist/external-dns-webhook-opnsense
+
+COPY --chmod=777 ${DIST} /usr/bin/external-dns-webhook-opnsense
 
 USER 65534:65534
 
