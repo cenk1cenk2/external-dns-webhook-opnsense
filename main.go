@@ -40,8 +40,6 @@ func main() {
 				return err
 			}
 
-			// TODO: add a check for opnsense client to do a health call
-
 			client, err := opnsense.NewClient(
 				&opnsense.OpnsenseClientSvc{
 					Logger: logger,
@@ -64,7 +62,7 @@ func main() {
 			}
 
 			a := api.NewApi(&api.ApiSvc{
-				Logger:            logger,
+				Logger:         logger,
 				Validator:      validator,
 				OpnsenseClient: client,
 				Provider:       provider,
