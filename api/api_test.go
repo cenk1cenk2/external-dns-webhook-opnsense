@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
-	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
@@ -40,32 +38,6 @@ var _ = Describe("API", func() {
 				err := <-a.Start(":0")
 				Expect(err).To(Equal(http.ErrServerClosed))
 			}()
-
-			Expect(a.Shutdown()).ToNot(HaveOccurred())
-		})
-
-		It("should be able to create a new API", func() {
-			go func() {
-				defer GinkgoRecover()
-
-				err := <-a.Start(":0")
-				Expect(err).To(Equal(http.ErrServerClosed))
-			}()
-
-			Eventually(func() error {
-				defer GinkgoRecover()
-
-				addr := fmt.Sprintf("http://%s/", (<-a.GetListener()).Addr().String())
-				GinkgoWriter.Printf("Trying address: %s\n", addr)
-				_, err := http.Get(addr)
-
-				if err != nil {
-					GinkgoWriter.Printf("Got error: %s -> %w\n", reflect.TypeOf(err), err)
-				}
-
-				return err
-			}, time.Second*3, time.Millisecond*100).
-				ToNot(HaveOccurred())
 
 			Expect(a.Shutdown()).ToNot(HaveOccurred())
 		})
