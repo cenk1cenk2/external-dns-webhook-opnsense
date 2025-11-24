@@ -1,0 +1,58 @@
+---
+stages:
+  - install
+  - build
+  - version
+  - publish
+
+include:
+  - project: devops/pipelines
+    ref: go@1.5.0
+    file:
+      - /go/install.gitlab-ci.yml
+      - /go/lint.gitlab-ci.yml
+      - /go/test.gitlab-ci.yml
+      - /go/build.gitlab-ci.yml
+    inputs:
+      version: 1.25-alpine
+
+  - project: devops/pipelines
+    ref: semantic-release@1.5.0
+    file:
+      - /semantic-release/publish.gitlab-ci.yml
+
+  - project: devops/pipelines
+    ref: buildah@1.1.2
+    file:
+      - /buildah/build.yml
+      - /buildah/registry-dockerhub.gitlab-ci.yml
+
+variables:
+  TAGS_FILE: .tags
+
+install:
+  stage: install
+  extends:
+    - .go-install
+
+lint:
+  stage: build
+  extends:
+    - .go-lint
+
+test:
+  stage: build
+  extends:
+    - .go-test
+
+version:
+  stage: version
+  extends:
+    - .semantic-release
+
+publish:
+  stage: publish
+  variables:
+    CONTAINER_IMAGE_NAME: cenk1cenk2/external-dns-webhook-opnsense
+  extends:
+    - .container-build
