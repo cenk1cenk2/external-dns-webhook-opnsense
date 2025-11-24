@@ -23,7 +23,7 @@ func main() {
 	cmd := &cli.Command{
 		Name:    "external-dns-webhook-opnsense",
 		Version: VERSION,
-		Flags:   config.GetFlags(conf),
+		Flags:   config.BindFlags(conf),
 		Action: func(_ context.Context, cmd *cli.Command) error {
 			logger, err := services.NewLogger(&services.LoggerConfig{
 				Level:   conf.LogLevel,

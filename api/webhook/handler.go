@@ -1,6 +1,7 @@
 package webhook
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -28,13 +29,12 @@ func NewHandler(svc *HandlerSvc) *Handler {
 }
 
 const (
-	AcceptedMedia = "application/external.dns.webhook+json;version=1"
+	ExternalDnsAcceptedMedia string = "application/external.dns.webhook+json;version=1"
 )
 
 func (h *Handler) VerifyHeaders(c *ctx.Context) error {
-	accept := c.Request().Header.Get(echo.HeaderAccept)
-	if !strings.Contains(accept, AcceptedMedia) {
-		return c.NoContent(http.StatusNotAcceptable)
+	if !strings.Contains(c.Request().Header.Get(echo.HeaderAccept), ExternalDnsAcceptedMedia) {
+		return c.NewHTTPError(http.StatusNotAcceptable, fmt.Errorf("unsupported media type, must be %s", ExternalDnsAcceptedMedia))
 	}
 
 	return nil

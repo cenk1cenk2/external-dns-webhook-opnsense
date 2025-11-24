@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 
 	"github.com/browningluke/opnsense-go/pkg/unbound"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
@@ -16,6 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/plan"
 )
 
 var _ = Describe("records", func() {
@@ -23,13 +25,13 @@ var _ = Describe("records", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(ctx.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
 		})
 
 		It("should be able to handle errors while fetching the records", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(nil, fmt.Errorf("")).Once()
@@ -40,7 +42,7 @@ var _ = Describe("records", func() {
 
 		It("should be able to fetch the records on empty response", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(&unbound.SearchHostOverrideResponse{}, nil).Once()
@@ -55,7 +57,7 @@ var _ = Describe("records", func() {
 
 		It("should be able to fetch and convert all the records", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
@@ -65,15 +67,12 @@ var _ = Describe("records", func() {
 					Current:  1,
 					Rows: []unbound.SearchHostOverrideItem{
 						{
-							Id:          "id",
-							Enabled:     "1",
-							Hostname:    "example",
-							Domain:      "local",
-							Type:        "A",
-							Server:      "unbound",
-							MXPriority:  "10",
-							MXDomain:    "mail.local",
-							Description: "test record",
+							Id:       "id",
+							Enabled:  "1",
+							Hostname: "example",
+							Domain:   "com",
+							Type:     "A",
+							Server:   "192.168.1.1",
 						},
 					},
 				},
@@ -87,12 +86,12 @@ var _ = Describe("records", func() {
 			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
 			Expect(body).To(HaveLen(1))
 
-			Expect(body[0].DNSName).To(Equal("example.local"))
-			Expect(body[0].Targets).To(BeEquivalentTo([]string{"example.local"}))
+			Expect(body[0].DNSName).To(Equal("example.com"))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"192.168.1.1"}))
 			Expect(body[0].RecordType).To(Equal("A"))
 			Expect(body[0].ProviderSpecific).To(ContainElements(
 				endpoint.ProviderSpecificProperty{
-					Name:  "opnsense.record.uuid",
+					Name:  provider.ProviderSpecificUUID.String(),
 					Value: "id",
 				},
 			))
@@ -100,7 +99,7 @@ var _ = Describe("records", func() {
 
 		It("should be able to fetch and convert records with ownership", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
@@ -114,11 +113,11 @@ var _ = Describe("records", func() {
 							Enabled:  "1",
 							Type:     "A",
 							Hostname: "example",
-							Domain:   "local",
+							Domain:   "com",
 							Server:   "127.0.0.1",
 							Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
-								Name:    "external-dns",
-								Targets: []string{"example.local"},
+								Name: "a-example.com",
+								Data: "heritage=external-dns",
 							}),
 						},
 					},
@@ -133,19 +132,211 @@ var _ = Describe("records", func() {
 			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
 			Expect(body).To(HaveLen(2))
 
-			Expect(body[0].DNSName).To(Equal("example.local"))
-			Expect(body[0].Targets).To(BeEquivalentTo([]string{"example.local"}))
+			Expect(body[0].DNSName).To(Equal("example.com"))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"127.0.0.1"}))
 			Expect(body[0].RecordType).To(Equal("A"))
 			Expect(body[0].ProviderSpecific).To(ContainElements(
 				endpoint.ProviderSpecificProperty{
-					Name:  "opnsense.record.uuid",
+					Name:  provider.ProviderSpecificUUID.String(),
 					Value: "id",
 				},
 			))
 
-			Expect(body[1].DNSName).To(Equal("external-dns"))
-			Expect(body[1].Targets).To(BeEquivalentTo([]string{"example.local"}))
 			Expect(body[1].RecordType).To(Equal("TXT"))
+			Expect(body[1].DNSName).To(Equal("a-example.com"))
+			Expect(body[1].Targets).To(BeEquivalentTo([]string{"heritage=external-dns"}))
+		})
+	})
+
+	Context("POST", func() {
+		It("should be able to validate the incoming headers", func() {
+			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodPost, "/", nil))
+
+			Expect(ctx.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
+		})
+
+		It("should be able to handle empty set of records", func() {
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/",
+				strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{})),
+			)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusOK))
+		})
+
+		When("deleting records", func() {
+			It("should be able to handle A and AAAA records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Delete: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-A").Return(nil).Once()
+				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-AAAA").Return(nil).Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		When("updating records", func() {
+			It("should be able to handle A and AAAA records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						UpdateNew: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+				mocks.Client.EXPECT().
+					UnboundUpdateHostOverride(mock.Anything, "id-A", &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "A",
+						Server:   "192.168.1.1",
+					}).
+					Return(nil).
+					Once()
+				mocks.Client.EXPECT().
+					UnboundUpdateHostOverride(mock.Anything, "id-AAAA", &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "AAAA",
+						Server:   "fd00::",
+					}).
+					Return(nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		When("creating records", func() {
+			It("should be able to handle A and AAAA records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Create: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1"),
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "A",
+						Server:   "192.168.1.1",
+					}).
+					Return("id-A", nil).
+					Once()
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "AAAA",
+						Server:   "fd00::",
+					}).
+					Return("id-AAAA", nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+			})
+
+			It("should be able to handle A and AAAA records and their corresponding TXT records", func() {
+				handler.Provider.Config.TxtPrefix = "{{ .Type | lower }}-"
+
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Create: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1"),
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,test=A"),
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::"),
+							endpoint.NewEndpoint("aaaa-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,test=AAAA"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "A",
+						Server:   "192.168.1.1",
+						Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
+							Name: "a-example.com",
+							Data: "heritage=external-dns,test=A",
+						}),
+					}).
+					Return("id-A", nil).
+					Once()
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled:  "1",
+						Hostname: "example",
+						Domain:   "com",
+						Type:     "AAAA",
+						Server:   "fd00::",
+						Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
+							Name: "aaaa-example.com",
+							Data: "heritage=external-dns,test=AAAA",
+						}),
+					}).
+					Return("id-AAAA", nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+			})
 		})
 	})
 })

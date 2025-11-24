@@ -9,9 +9,9 @@ import (
 )
 
 type OwnershipRecord struct {
-	Name          string   `json:"name"`
-	Targets       []string `json:"targets"`
-	SetIdentifier string   `json:"setIdentifier,omitempty"`
+	Name          string `json:"name"`
+	Data          string `json:"data"`
+	SetIdentifier string `json:"setIdentifier,omitempty"`
 }
 
 var (
@@ -20,12 +20,13 @@ var (
 
 func NewOwnershipRecordFromEndpoint(ep *endpoint.Endpoint) (*OwnershipRecord, error) {
 	// we replicate the behavior of: https://github.com/kubernetes-sigs/external-dns/blob/master/registry/txt.go#L200
-	if len(ep.Targets) == 0 {
-		return nil, fmt.Errorf("endpoint has no targets")
-	} else if ep.RecordType != endpoint.RecordTypeTXT {
+	if ep.RecordType != endpoint.RecordTypeTXT {
 		return nil, fmt.Errorf("endpoint is not a TXT record")
+	} else if len(ep.Targets) == 0 {
+		return nil, fmt.Errorf("endpoint has no targets")
+	} else if len(ep.Targets) > 1 {
+		return nil, fmt.Errorf("endpoint has multiple targets")
 	}
-
 	if _, err := endpoint.NewLabelsFromStringPlain(ep.Targets[0]); errors.Is(err, endpoint.ErrInvalidHeritage) {
 		// then this is not a txt ownership record
 		return nil, ErrNotOwnershipRecord
@@ -33,7 +34,7 @@ func NewOwnershipRecordFromEndpoint(ep *endpoint.Endpoint) (*OwnershipRecord, er
 
 	return &OwnershipRecord{
 		Name:          ep.DNSName,
-		Targets:       ep.Targets,
+		Data:          ep.Targets[0],
 		SetIdentifier: ep.SetIdentifier,
 	}, nil
 }
@@ -53,7 +54,7 @@ func (o *OwnershipRecord) IntoEndpoint() (*endpoint.Endpoint, error) {
 	return &endpoint.Endpoint{
 		RecordType:    endpoint.RecordTypeTXT,
 		DNSName:       o.Name,
-		Targets:       o.Targets,
+		Targets:       []string{o.Data},
 		SetIdentifier: o.SetIdentifier,
 	}, nil
 }

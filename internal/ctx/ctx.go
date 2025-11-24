@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/labstack/echo/v4"
 )
@@ -125,5 +126,5 @@ func (c *Context) With(with ...interface{}) *Context {
 }
 
 func (c *Context) NewHTTPError(code int, err error) error {
-	return echo.NewHTTPError(code, err.Error())
+	return interfaces.NewHttpError(code, err)
 }

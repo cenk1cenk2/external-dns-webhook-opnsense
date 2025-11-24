@@ -13,7 +13,7 @@ func (h *Handler) HandleAdjustEndpointsPost(c *ctx.Context) error {
 	}
 
 	body := []*endpoint.Endpoint{}
-	if err := c.BindBody(body); err != nil {
+	if err := c.BindBody(&body); err != nil {
 		return err
 	}
 

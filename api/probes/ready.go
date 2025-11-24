@@ -16,7 +16,7 @@ func (h *Handler) HandleReadyGet(c *ctx.Context) error {
 	ready := <-h.IsReady()
 
 	if !ready {
-		return c.NewHTTPError(http.StatusServiceUnavailable, fmt.Errorf("Service is not ready."))
+		return c.NewHTTPError(http.StatusServiceUnavailable, fmt.Errorf("service is not ready."))
 	}
 
 	return c.NoContent(http.StatusOK)

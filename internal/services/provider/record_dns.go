@@ -20,7 +20,7 @@ func NewDnsRecord(override unbound.SearchHostOverrideItem) *DnsRecord {
 }
 
 func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
-	if slices.Contains([]string{endpoint.RecordTypeA, endpoint.RecordTypeAAAA}, ep.RecordType) {
+	if !slices.Contains([]string{endpoint.RecordTypeA, endpoint.RecordTypeAAAA}, ep.RecordType) {
 		return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
 	}
 
@@ -31,9 +31,18 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 	}
 
 	dnsname := strings.SplitN(ep.DNSName, ".", 2)
+	if len(dnsname) != 2 {
+		return nil, fmt.Errorf("invalid dns name: %s", ep.DNSName)
+	}
 	record.Hostname = dnsname[0]
 	record.Domain = dnsname[1]
+	if len(ep.Targets) == 0 {
+		return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
+	} else if len(ep.Targets) > 1 {
+		return nil, fmt.Errorf("multiple targets can not be handled: %s", ep.DNSName)
+	}
 	record.Server = ep.Targets[0]
+	record.Type = ep.RecordType
 
 	if record.Hostname == "*" {
 		return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)

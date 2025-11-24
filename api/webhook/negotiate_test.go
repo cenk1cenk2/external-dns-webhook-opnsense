@@ -19,13 +19,13 @@ var _ = Describe("negotiate", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
+			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
 		})
 
 		It("should be able the negotiate with incoming request", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
@@ -40,7 +40,7 @@ var _ = Describe("negotiate", func() {
 			})
 
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
@@ -62,7 +62,7 @@ var _ = Describe("negotiate", func() {
 			})
 
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set(echo.HeaderAccept, webhook.AcceptedMedia)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())

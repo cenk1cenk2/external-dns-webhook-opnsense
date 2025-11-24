@@ -22,7 +22,7 @@ func InlineTemplate[Ctx any](tmpl string, ctx Ctx, funcs ...template.FuncMap) (s
 	tmp, err := parser.Parse(tmpl)
 
 	if err != nil {
-		return "", fmt.Errorf("Can not create inline template: %w", err)
+		return "", fmt.Errorf("can not create inline template: %w", err)
 	}
 
 	var w bytes.Buffer
@@ -30,7 +30,7 @@ func InlineTemplate[Ctx any](tmpl string, ctx Ctx, funcs ...template.FuncMap) (s
 	err = tmp.ExecuteTemplate(&w, "inline", ctx)
 
 	if err != nil {
-		return "", fmt.Errorf("Can not generate inline template: %w", err)
+		return "", fmt.Errorf("can not generate inline template: %w", err)
 	}
 
 	return w.String(), nil

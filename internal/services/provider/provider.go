@@ -70,7 +70,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			NewEndpoint(
 				record.GetFQDN(),
 				record.Type,
-				record.GetFQDN(),
+				record.Server,
 			).
 			WithProviderSpecific(
 				ProviderSpecificUUID.String(),
@@ -167,12 +167,13 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			// try to find the matching text record, if we have it we will set the ownership
 
 			dnsname, err := services.InlineTemplate(
-				fmt.Sprintf("%s%s%s", p.Config.TxtPrefix, record.Hostname, p.Config.TxtSuffix),
+				fmt.Sprintf("%s%s%s", p.Config.TxtPrefix, record.GetFQDN(), p.Config.TxtSuffix),
 				record,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to inline template for txt record matching: %w", err)
 			}
+			p.Log.Debugf("Looking for matching TXT record for ownership: %s", dnsname)
 
 			matching := slices.IndexFunc(changes.Create, func(e *endpoint.Endpoint) bool {
 				return e.RecordType == endpoint.RecordTypeTXT && e.DNSName == dnsname

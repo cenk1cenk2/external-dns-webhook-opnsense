@@ -6,7 +6,7 @@ import (
 
 //revive:disable:line-length-limit
 
-func GetFlags(c *Config) []cli.Flag {
+func BindFlags(c *Config) []cli.Flag {
 	return []cli.Flag{
 		&cli.StringFlag{
 			Name:  "log-level",
@@ -175,7 +175,7 @@ func GetFlags(c *Config) []cli.Flag {
 				cli.EnvVar("TXT_PREFIX"),
 			),
 			Required:    false,
-			Value:       "{{ .RecordType }}-",
+			Value:       "{{ .Type | lower }}-",
 			Destination: &c.Provider.TxtPrefix,
 		},
 

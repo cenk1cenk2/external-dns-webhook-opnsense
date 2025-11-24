@@ -92,8 +92,6 @@ func NewLogger(conf *LoggerConfig) (*Logger, error) {
 		z,
 	}
 
-	logger.WithCaller().Debugf("Initialized logger with level: %s", level.String())
-
 	return logger, nil
 }
 
