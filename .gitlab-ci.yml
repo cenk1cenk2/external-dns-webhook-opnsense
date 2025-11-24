@@ -26,6 +26,8 @@ include:
     file:
       - /buildah/build.gitlab-ci.yml
       - /buildah/registry-dockerhub.gitlab-ci.yml
+    rules:
+      - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 variables:
   TAGS_FILE: .tags
