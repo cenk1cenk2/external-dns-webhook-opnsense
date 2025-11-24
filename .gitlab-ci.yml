@@ -10,9 +10,9 @@ include:
     ref: go@1.5.0
     file:
       - /go/install.gitlab-ci.yml
+      - /go/build.gitlab-ci.yml
       - /go/lint.gitlab-ci.yml
       - /go/test.gitlab-ci.yml
-      - /go/build.gitlab-ci.yml
     inputs:
       version: 1.25-alpine
 
@@ -51,6 +51,11 @@ test:
   stage: build
   extends:
     - .go-test
+
+build:
+  stage: build
+  extends:
+    - .go-build
 
 version:
   stage: version
