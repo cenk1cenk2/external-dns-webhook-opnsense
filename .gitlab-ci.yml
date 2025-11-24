@@ -24,7 +24,7 @@ include:
   - project: devops/pipelines
     ref: buildah@1.1.2
     file:
-      - /buildah/build.yml
+      - /buildah/build.gitlab-ci.yml
       - /buildah/registry-dockerhub.gitlab-ci.yml
 
 variables:
