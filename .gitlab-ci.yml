@@ -72,5 +72,6 @@ publish:
   stage: publish
   variables:
     CONTAINER_IMAGE_NAME: cenk1cenk2/external-dns-webhook-opnsense
+    CONTAINER_IMAGE_TAGS: snapshot
   extends:
     - .container-build
