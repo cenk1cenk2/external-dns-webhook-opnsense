@@ -34,8 +34,14 @@ include:
     file:
       - /buildah/registry-dockerhub.gitlab-ci.yml
 
+  - project: devops/pipelines
+    ref: references@1.2.1
+    file:
+      - /references/gh-status.gitlab-ci.yml
+
 variables:
   TAGS_FILE: .tags
+  GITHUB_STATUS_PROJECT: cenk1cenk2/external-dns-webhook-opnsense
 
 install:
   stage: install
