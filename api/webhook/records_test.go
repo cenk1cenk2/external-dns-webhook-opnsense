@@ -49,6 +49,7 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
 			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
@@ -81,6 +82,7 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
 			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
@@ -127,6 +129,7 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
 			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
@@ -169,6 +172,7 @@ var _ = Describe("records", func() {
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
 
 		When("deleting records", func() {
@@ -195,6 +199,7 @@ var _ = Describe("records", func() {
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
 		})
 
@@ -240,6 +245,7 @@ var _ = Describe("records", func() {
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
 		})
 
@@ -283,6 +289,7 @@ var _ = Describe("records", func() {
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
 
 			It("should be able to handle A and AAAA records and their corresponding TXT records", func() {
@@ -336,6 +343,7 @@ var _ = Describe("records", func() {
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
 		})
 	})

@@ -39,6 +39,7 @@ var _ = Describe("adjustendpoints", func() {
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
 
 		It("should be able to handle when there is no actionable item", func() {
@@ -58,6 +59,7 @@ var _ = Describe("adjustendpoints", func() {
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
 
 		It("should be able to handle when there is drifted actionable item", func() {
@@ -91,6 +93,7 @@ var _ = Describe("adjustendpoints", func() {
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
 	})
 })

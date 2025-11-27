@@ -30,6 +30,7 @@ var _ = Describe("negotiate", func() {
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{}`))
 		})
 
@@ -45,6 +46,7 @@ var _ = Describe("negotiate", func() {
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{
         "include": [
           "example.com"
@@ -67,6 +69,7 @@ var _ = Describe("negotiate", func() {
 
 			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{
         "regexInclude": "^.*\\.example\\.com$",
         "regexExclude": "^excluded.example.com$"
