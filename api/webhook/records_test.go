@@ -156,7 +156,7 @@ var _ = Describe("records", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodPost, "/", nil))
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
-			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
+			Expect(res.Code).To(Equal(http.StatusUnsupportedMediaType))
 		})
 
 		It("should be able to handle empty set of records", func() {
@@ -165,8 +165,7 @@ var _ = Describe("records", func() {
 				"/",
 				strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{})),
 			)
-			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 			c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -189,8 +188,7 @@ var _ = Describe("records", func() {
 						},
 					})),
 				)
-				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-A").Return(nil).Once()
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-AAAA").Return(nil).Once()
@@ -217,8 +215,7 @@ var _ = Describe("records", func() {
 						},
 					})),
 				)
-				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
 					UnboundUpdateHostOverride(mock.Anything, "id-A", &unbound.HostOverride{
@@ -261,8 +258,7 @@ var _ = Describe("records", func() {
 						},
 					})),
 				)
-				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
 					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
@@ -307,8 +303,7 @@ var _ = Describe("records", func() {
 						},
 					})),
 				)
-				req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-				req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
 					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{

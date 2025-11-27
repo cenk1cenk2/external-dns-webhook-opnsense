@@ -24,7 +24,7 @@ var _ = Describe("adjustendpoints", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodPost, "/", nil))
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).To(HaveOccurred())
-			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
+			Expect(res.Code).To(Equal(http.StatusUnsupportedMediaType))
 		})
 
 		It("should be able to handle when there is no item", func() {
@@ -33,8 +33,7 @@ var _ = Describe("adjustendpoints", func() {
 				"/",
 				strings.NewReader(fixtures.MustJsonMarshal([]*endpoint.Endpoint{})),
 			)
-			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
@@ -53,8 +52,7 @@ var _ = Describe("adjustendpoints", func() {
 					endpoint.NewEndpoint("example.com", endpoint.RecordTypeTXT),
 				})),
 			)
-			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
@@ -75,8 +73,7 @@ var _ = Describe("adjustendpoints", func() {
 						WithProviderSpecific(provider.ProviderSpecificDrifted.String(), "true"),
 				})),
 			)
-			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
-			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundUpdateHostOverride(
