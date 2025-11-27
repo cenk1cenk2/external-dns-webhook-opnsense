@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.1.0...v1.1.1) (2025-11-27)
+
+
+### Bug Fixes
+
+* dont use log endpoint for probes ([ce36ac5](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/ce36ac50adc263a58e2767f79bebdf99be5ccd3f))
+
 # [1.1.0](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.7...v1.1.0) (2025-11-27)
 
 
