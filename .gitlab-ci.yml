@@ -7,7 +7,7 @@ stages:
 
 include:
   - project: devops/pipelines
-    ref: go@1.5.1
+    ref: go@1.5.2
     file:
       - /go/install.gitlab-ci.yml
       - /go/lint.gitlab-ci.yml
@@ -35,7 +35,7 @@ include:
       - /buildah/registry-dockerhub.gitlab-ci.yml
 
   - project: devops/pipelines
-    ref: references@1.2.1
+    ref: references@1.2.2
     file:
       - /references/gh-status.gitlab-ci.yml
 
