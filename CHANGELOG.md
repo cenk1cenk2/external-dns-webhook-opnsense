@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.3...v1.0.4) (2025-11-27)
+
+
+### Bug Fixes
+
+* pass the full url ([c0919db](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/c0919db248e849a14fc221994638bf4719b2ac75))
+
 ## [1.0.3](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.2...v1.0.3) (2025-11-27)
 
 
