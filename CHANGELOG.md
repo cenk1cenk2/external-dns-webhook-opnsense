@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.2...v1.0.3) (2025-11-27)
+
+
+### Bug Fixes
+
+* binary name ([0c7cd77](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/0c7cd77646a2a26ab62368ab80c6f391455521b8))
+
 ## [1.0.2](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.1...v1.0.2) (2025-11-24)
 
 
