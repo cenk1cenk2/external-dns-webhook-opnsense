@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.5...v1.0.6) (2025-11-27)
+
+
+### Bug Fixes
+
+* send the correct content-type back ([1c14db0](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/1c14db0e749cadb9e2128e50b637ef78c9cbca6b))
+
 ## [1.0.5](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.4...v1.0.5) (2025-11-27)
 
 
