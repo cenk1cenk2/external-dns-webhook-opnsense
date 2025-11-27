@@ -3,7 +3,7 @@ FROM scratch
 
 ARG BIN=./dist/external-dns-webhook-opnsense
 
-COPY --chmod=777 ${DIST} /usr/bin/external-dns-webhook-opnsense
+COPY --chmod=777 ${BIN} /usr/bin/external-dns-webhook-opnsense
 
 USER 65534:65534
 
