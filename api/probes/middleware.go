@@ -3,8 +3,6 @@ package probes
 import (
 	"errors"
 	"net/http"
-	"slices"
-	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/karagenc/zap4echo"
@@ -35,17 +33,6 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 	return []echo.MiddlewareFunc{
 		zap4echo.RecoverWithConfig(a.Logger.Logger, zap4echo.RecoverConfig{
 			CustomRequestIDHeader: echo.HeaderXRequestID,
-		}),
-		zap4echo.LoggerWithConfig(a.Logger.Logger, zap4echo.LoggerConfig{
-			CustomRequestIDHeader: echo.HeaderXRequestID,
-			IncludeCaller:         true,
-			OmitReferer:           true,
-			Skipper: func(c echo.Context) bool {
-				return slices.Contains([]bool{
-					strings.HasPrefix(c.Path(), "/healthz"),
-					strings.HasPrefix(c.Path(), "/readyz"),
-				}, true)
-			},
 		}),
 		middleware.RequestID(),
 		middleware.CORS(),
