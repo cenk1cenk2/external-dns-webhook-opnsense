@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.4...v1.0.5) (2025-11-27)
+
+
+### Bug Fixes
+
+* update go publish mech ([cade9c4](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/cade9c48fa6aa776e531b11064660b41d58b2466))
+
 ## [1.0.4](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.3...v1.0.4) (2025-11-27)
 
 
