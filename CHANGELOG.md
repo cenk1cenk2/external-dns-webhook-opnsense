@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.7...v1.1.0) (2025-11-27)
+
+
+### Features
+
+* seperate the probe api since external dns expects it in a different port ([68fee49](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/68fee49e303a8ca0560cc294897075d63a75a12c))
+
 ## [1.0.7](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.0.6...v1.0.7) (2025-11-27)
 
 
