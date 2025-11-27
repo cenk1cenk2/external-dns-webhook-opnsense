@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/probes"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/config"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -61,6 +62,9 @@ func main() {
 				return fmt.Errorf("failed to create provider: %w", err)
 			}
 
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+			defer stop()
+
 			a := api.NewApi(&api.ApiSvc{
 				Logger:         logger,
 				Validator:      validator,
@@ -68,8 +72,11 @@ func main() {
 				Provider:       provider,
 			}, conf.Api)
 
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-			defer stop()
+			p := probes.NewApi(&probes.ApiSvc{
+				Logger:     logger,
+				Validator:  validator,
+				WebhookApi: a,
+			}, conf.Probes)
 
 			go func() {
 				if err := <-a.Start(fmt.Sprintf(":%d", conf.Port)); err != nil && errors.Is(err, http.ErrServerClosed) {
@@ -79,8 +86,21 @@ func main() {
 				}
 			}()
 
+			go func() {
+				if err := <-p.Start(fmt.Sprintf(":%d", conf.HealthPort)); err != nil && errors.Is(err, http.ErrServerClosed) {
+					log.Warnf("Shutting down the probe server.")
+				} else if err != nil {
+					log.Panicf("Failed to start the probe server: %w", err)
+				}
+			}()
+
 			<-ctx.Done()
 			if err := a.Shutdown(); err != nil {
+				log.Warnln(err)
+
+				return err
+			}
+			if err := p.Shutdown(); err != nil {
 				log.Warnln(err)
 
 				return err

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/probes"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 )
@@ -10,9 +11,11 @@ type Config struct {
 	LogLevel   string
 	LogEncoder string
 
-	Port uint16
+	Port       uint16
+	HealthPort uint16
 
-	Api api.ApiConfig
+	Api    api.ApiConfig
+	Probes probes.ApiConfig
 
 	OpnsenseClient opnsense.OpnsenseClientConfig
 	Provider       provider.ProviderConfig

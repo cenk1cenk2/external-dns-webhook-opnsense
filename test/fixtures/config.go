@@ -10,6 +10,7 @@ func NewTestConfig() *config.Config {
 		LogLevel:   "debug",
 		LogEncoder: "console",
 		Port:       8888,
+		HealthPort: 8080,
 		Api:        api.ApiConfig{},
 	}
 }

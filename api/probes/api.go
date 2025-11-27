@@ -1,4 +1,4 @@
-package api
+package probes
 
 import (
 	"context"
@@ -6,10 +6,9 @@ import (
 	"net"
 	"time"
 
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/labstack/echo/v4"
 )
 
@@ -30,8 +29,7 @@ type ApiSvc struct {
 	Logger    *services.Logger
 	Validator *services.Validator
 
-	Provider       *provider.Provider
-	OpnsenseClient *opnsense.Client
+	WebhookApi *api.Api
 }
 
 func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
@@ -59,7 +57,7 @@ func (a *Api) Start(address string) chan error {
 		err <- a.Echo.Start(address)
 	}()
 
-	a.log.Infof("Starting server at address: %s", (<-a.GetListener()).Addr().String())
+	a.log.Infof("Starting health server at address: %s", (<-a.GetListener()).Addr().String())
 
 	return err
 }
@@ -69,13 +67,7 @@ func (a *Api) IsReady() chan bool {
 
 	<-a.GetListener()
 
-	if err := a.OpnsenseClient.CheckUnboundService(context.Background()); err != nil {
-		a.log.Errorf("Unbound service is not running: %v", err)
-
-		res <- false
-
-		return res
-	}
+	<-a.WebhookApi.IsReady()
 
 	res <- true
 

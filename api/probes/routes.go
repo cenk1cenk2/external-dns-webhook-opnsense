@@ -5,9 +5,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) RegisterRoutes(r *echo.Group) *Handler {
-	g := r.Group("")
+func (a *Api) RegisterRoutes(group *echo.Group) {
+	NewHandler(&HandlerSvc{
+		Log:     a.Logger,
+		IsReady: a.IsReady,
+	}).
+		RegisterRoutes(group)
+}
 
+func (h *Handler) RegisterRoutes(g *echo.Group) {
 	g.GET("/healthz", ctx.With(
 		h.HandleHealthGet,
 		h.Log,
@@ -16,6 +22,4 @@ func (h *Handler) RegisterRoutes(r *echo.Group) *Handler {
 		h.HandleReadyGet,
 		h.Log,
 	))
-
-	return h
 }

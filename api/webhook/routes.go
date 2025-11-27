@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) RegisterRoutes(r *echo.Group) *Handler {
+func (h *Handler) RegisterRoutes(r *echo.Group) {
 	g := r.Group("")
 
 	// as per: https://github.com/kubernetes-sigs/external-dns/blob/0c39b6eb4902ca80cf18f16305e0cb54619daa23/docs/tutorials/webhook-provider.md
@@ -29,6 +29,4 @@ func (h *Handler) RegisterRoutes(r *echo.Group) *Handler {
 		h.HandleAdjustEndpointsPost,
 		h.Log,
 	))
-
-	return h
 }

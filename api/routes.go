@@ -1,19 +1,11 @@
 package api
 
 import (
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/probes"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
+	"github.com/labstack/echo/v4"
 )
 
-func (a *Api) RegisterRoutes() {
-	group := a.Echo.Group("")
-
-	probes.NewHandler(&probes.HandlerSvc{
-		Log:     a.Logger,
-		IsReady: a.IsReady,
-	}).
-		RegisterRoutes(group)
-
+func (a *Api) RegisterRoutes(group *echo.Group) {
 	webhook.NewHandler(&webhook.HandlerSvc{
 		Log:      a.Logger,
 		Provider: a.Provider,

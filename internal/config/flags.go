@@ -41,6 +41,17 @@ func BindFlags(c *Config) []cli.Flag {
 			Destination: &c.Port,
 		},
 
+		&cli.Uint16Flag{
+			Name:  "health-port",
+			Usage: "Port on which the health check server will listen.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("HEALTH_PORT"),
+			),
+			Required:    false,
+			Value:       8080,
+			Destination: &c.HealthPort,
+		},
+
 		&cli.BoolFlag{
 			Name:  "dry-run",
 			Usage: "The application will not make any changes to the OPNsense DNS records, only log the intended actions.",

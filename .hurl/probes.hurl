@@ -1,3 +1,3 @@
-GET http://localhost:8888/healthz
+GET http://localhost:8080/healthz
 
-GET http://localhost:8888/readyz
+GET http://localhost:8080/readyz
