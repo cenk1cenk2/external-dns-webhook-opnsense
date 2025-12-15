@@ -5,12 +5,12 @@ go 1.25.4
 require (
 	github.com/browningluke/opnsense-go v0.15.0
 	github.com/creasty/defaults v1.8.0
-	github.com/go-playground/validator/v10 v10.28.0
+	github.com/go-playground/validator/v10 v10.29.0
 	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/karagenc/zap4echo v0.1.1
-	github.com/labstack/echo/v4 v4.13.4
-	github.com/onsi/ginkgo/v2 v2.27.2
-	github.com/onsi/gomega v1.38.2
+	github.com/labstack/echo/v4 v4.14.0
+	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/gomega v1.38.3
 	github.com/stretchr/testify v1.11.1
 	github.com/thessem/zap-prettyconsole v0.5.2
 	github.com/urfave/cli/v3 v3.6.1
@@ -82,16 +82,16 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.33.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/tools v0.39.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
@@ -111,4 +111,4 @@ require (
 
 tool github.com/onsi/ginkgo/v2/ginkgo
 
-replace github.com/browningluke/opnsense-go => github.com/cenk1cenk2/opnsense-go v0.0.0-20251123210232-53ab58300553
+replace github.com/browningluke/opnsense-go => github.com/cenk1cenk2/opnsense-go v0.0.0-20251101200740-13f2585a4ff2
