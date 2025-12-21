@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/browningluke/opnsense-go v0.15.0
 	github.com/creasty/defaults v1.8.0
-	github.com/go-playground/validator/v10 v10.29.0
+	github.com/go-playground/validator/v10 v10.30.0
 	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/karagenc/zap4echo v0.1.1
 	github.com/labstack/echo/v4 v4.14.0
@@ -31,7 +31,7 @@ require (
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-openapi/jsonpointer v0.22.3 // indirect
 	github.com/go-openapi/jsonreference v0.21.3 // indirect
