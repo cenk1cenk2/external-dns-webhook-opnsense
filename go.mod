@@ -5,7 +5,7 @@ go 1.25.4
 require (
 	github.com/browningluke/opnsense-go v0.15.0
 	github.com/creasty/defaults v1.8.0
-	github.com/go-playground/validator/v10 v10.30.0
+	github.com/go-playground/validator/v10 v10.30.1
 	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/karagenc/zap4echo v0.1.1
 	github.com/labstack/echo/v4 v4.14.0
