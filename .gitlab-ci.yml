@@ -13,6 +13,9 @@ include:
       - /go/lint.gitlab-ci.yml
       - /go/test.gitlab-ci.yml
       - /go/build.gitlab-ci.yml
+    inputs:
+      rules:
+        - when: always
 
   - project: devops/pipelines
     ref: semantic-release@1.6.0
