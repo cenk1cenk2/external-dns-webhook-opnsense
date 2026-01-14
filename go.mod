@@ -6,7 +6,6 @@ require (
 	github.com/browningluke/opnsense-go v0.15.0
 	github.com/creasty/defaults v1.8.0
 	github.com/go-playground/validator/v10 v10.30.1
-	github.com/go-task/slim-sprig/v3 v3.0.0
 	github.com/karagenc/zap4echo v0.1.1
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/onsi/ginkgo/v2 v2.27.3
@@ -49,6 +48,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.25.4 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20250501235452-c0086092b71a // indirect

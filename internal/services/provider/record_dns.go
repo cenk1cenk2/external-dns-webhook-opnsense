@@ -90,6 +90,10 @@ func (r *DnsRecord) IsDrifted() bool {
 }
 
 func (r *DnsRecord) GetFQDN() string {
+	// TXT records store the full FQDN in Domain field with empty Hostname
+	if r.Type == endpoint.RecordTypeTXT {
+		return r.Domain
+	}
 	return fmt.Sprintf("%s.%s", r.Hostname, r.Domain)
 }
 

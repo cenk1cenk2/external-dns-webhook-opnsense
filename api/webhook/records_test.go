@@ -99,7 +99,7 @@ var _ = Describe("records", func() {
 			))
 		})
 
-		It("should be able to fetch and convert records with ownership", func() {
+		It("should be able to fetch and convert TXT records", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
@@ -111,16 +111,61 @@ var _ = Describe("records", func() {
 					Current:  1,
 					Rows: []unbound.SearchHostOverrideItem{
 						{
-							Id:       "id",
+							Id:      "id-txt",
+							Enabled: "1",
+							Type:    "TXT",
+							Domain:  "a-example.com",
+							TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
+						},
+					},
+				},
+				nil,
+			).Once()
+
+			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusOK))
+			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+
+			var body []endpoint.Endpoint
+			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(body).To(HaveLen(1))
+
+			Expect(body[0].DNSName).To(Equal("a-example.com"))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"heritage=external-dns,external-dns/owner=test-cluster"}))
+			Expect(body[0].RecordType).To(Equal("TXT"))
+			Expect(body[0].ProviderSpecific).To(ContainElements(
+				endpoint.ProviderSpecificProperty{
+					Name:  provider.ProviderSpecificUUID.String(),
+					Value: "id-txt",
+				},
+			))
+		})
+
+		It("should be able to fetch mixed A and TXT records", func() {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
+				&unbound.SearchHostOverrideResponse{
+					Total:    2,
+					RowCount: 2,
+					Current:  1,
+					Rows: []unbound.SearchHostOverrideItem{
+						{
+							Id:       "id-a",
 							Enabled:  "1",
 							Type:     "A",
 							Hostname: "example",
 							Domain:   "com",
-							Server:   "127.0.0.1",
-							Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
-								Name: "a-example.com",
-								Data: "heritage=external-dns",
-							}),
+							Server:   "192.168.1.1",
+						},
+						{
+							Id:      "id-txt",
+							Enabled: "1",
+							Type:    "TXT",
+							Domain:  "a-example.com",
+							TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
 						},
 					},
 				},
@@ -136,18 +181,12 @@ var _ = Describe("records", func() {
 			Expect(body).To(HaveLen(2))
 
 			Expect(body[0].DNSName).To(Equal("example.com"))
-			Expect(body[0].Targets).To(BeEquivalentTo([]string{"127.0.0.1"}))
+			Expect(body[0].Targets).To(BeEquivalentTo([]string{"192.168.1.1"}))
 			Expect(body[0].RecordType).To(Equal("A"))
-			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id",
-				},
-			))
 
-			Expect(body[1].RecordType).To(Equal("TXT"))
 			Expect(body[1].DNSName).To(Equal("a-example.com"))
-			Expect(body[1].Targets).To(BeEquivalentTo([]string{"heritage=external-dns"}))
+			Expect(body[1].Targets).To(BeEquivalentTo([]string{"heritage=external-dns,external-dns/owner=test-cluster"}))
+			Expect(body[1].RecordType).To(Equal("TXT"))
 		})
 	})
 
@@ -199,6 +238,28 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusOK))
 				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
+
+			It("should be able to handle TXT records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Delete: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+			})
 		})
 
 		When("updating records", func() {
@@ -234,6 +295,36 @@ var _ = Describe("records", func() {
 						Domain:   "com",
 						Type:     "AAAA",
 						Server:   "fd00::",
+					}).
+					Return(nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+			})
+
+			It("should be able to handle TXT records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						UpdateNew: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=updated-cluster").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+				mocks.Client.EXPECT().
+					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
+						Enabled: "1",
+						Domain:  "a-example.com",
+						Type:    "TXT",
+						TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
 					}).
 					Return(nil).
 					Once()
@@ -288,18 +379,45 @@ var _ = Describe("records", func() {
 				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			})
 
-			It("should be able to handle A and AAAA records and their corresponding TXT records", func() {
-				handler.Provider.Config.TxtPrefix = "{{ .Type | lower }}-"
+			It("should be able to handle TXT records", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Create: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled: "1",
+						Domain:  "a-example.com",
+						Type:    "TXT",
+						TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
+					}).
+					Return("id-txt", nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusOK))
+				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+			})
+
+			It("should be able to handle mixed A and TXT records (external-dns ownership pattern)", func() {
 				req := httptest.NewRequest(
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Create: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1"),
-							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,test=A"),
-							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::"),
-							endpoint.NewEndpoint("aaaa-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,test=AAAA"),
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster"),
+							endpoint.NewEndpoint("test.example.com", endpoint.RecordTypeAAAA, "fd00::1"),
+							endpoint.NewEndpoint("aaaa-test.example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster"),
 						},
 					})),
 				)
@@ -312,26 +430,36 @@ var _ = Describe("records", func() {
 						Domain:   "com",
 						Type:     "A",
 						Server:   "192.168.1.1",
-						Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
-							Name: "a-example.com",
-							Data: "heritage=external-dns,test=A",
-						}),
 					}).
 					Return("id-A", nil).
 					Once()
 				mocks.Client.EXPECT().
 					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled: "1",
+						Domain:  "a-example.com",
+						Type:    "TXT",
+						TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
+					}).
+					Return("id-txt-a", nil).
+					Once()
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
 						Enabled:  "1",
-						Hostname: "example",
-						Domain:   "com",
+						Hostname: "test",
+						Domain:   "example.com",
 						Type:     "AAAA",
-						Server:   "fd00::",
-						Description: fixtures.MustJsonMarshal(provider.OwnershipRecord{
-							Name: "aaaa-example.com",
-							Data: "heritage=external-dns,test=AAAA",
-						}),
+						Server:   "fd00::1",
 					}).
 					Return("id-AAAA", nil).
+					Once()
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled: "1",
+						Domain:  "aaaa-test.example.com",
+						Type:    "TXT",
+						TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
+					}).
+					Return("id-txt-aaaa", nil).
 					Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
