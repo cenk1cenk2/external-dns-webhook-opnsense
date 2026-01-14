@@ -1,3 +1,18 @@
+# [1.2.0](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.1.1...v1.2.0) (2026-01-14)
+
+
+### Bug Fixes
+
+* **deps:** update go all minor dependency updates ([c75badc](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/c75badc0b0080b4cf90b42fe9ccf4a98c1115a83))
+* **deps:** update module github.com/go-playground/validator/v10 to v10.30.0 ([43ef7cb](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/43ef7cb67e40d54b0d23dd497be7e3b3b80d88bb))
+* **deps:** update module github.com/go-playground/validator/v10 to v10.30.1 ([fda96a1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/fda96a11e330410d68206582075707f61ecd6d0f))
+* finalize the repository ([f09bc73](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/f09bc7356c5be0e993a6ad21f6864e3be25bc0f1))
+
+
+### Features
+
+* update release ([3a1ecfa](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/3a1ecfa5d24aec646a6b39e91506f2b588ea0f86))
+
 ## [1.1.1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.1.0...v1.1.1) (2025-11-27)
 
 
