@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.2.0...v1.2.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* update rules for publishing ([c3b0d2b](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/c3b0d2b1d2b650842c5eb82277960a03a574764f))
+
 # [1.2.0](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.1.1...v1.2.0) (2026-01-14)
 
 
