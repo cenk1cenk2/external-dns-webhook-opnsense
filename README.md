@@ -60,7 +60,7 @@ provider:
       periodSeconds: 300
     env:
       - name: LOG_LEVEL
-        value: debug
+        value: warn
       - name: OPNSENSE_URL
         valueFrom:
           secretKeyRef:
