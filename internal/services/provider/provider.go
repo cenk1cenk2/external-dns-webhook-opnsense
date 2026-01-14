@@ -2,9 +2,7 @@ package provider
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"slices"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -31,8 +29,6 @@ type ProviderSvc struct {
 
 type ProviderConfig struct {
 	DomainFilter DomainFilterConfig
-	TxtPrefix    string
-	TxtSuffix    string
 }
 
 var _ provider.Provider = (*Provider)(nil)
@@ -70,7 +66,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			NewEndpoint(
 				record.GetFQDN(),
 				record.Type,
-				record.Server,
+				record.GetTarget()...,
 			).
 			WithProviderSpecific(
 				ProviderSpecificUUID.String(),
@@ -92,24 +88,6 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 		p.Log.Debugf("Endpoint processed: %+v", ep)
 
 		endpoints = append(endpoints, ep)
-
-		ownership, err := NewOwnershipRecordFromDnsRecord(record)
-		if errors.Is(err, ErrNotOwnershipRecord) {
-			p.Log.Debugf("Record does not have an ownership record: %s", record.GetFQDN())
-		} else if err != nil {
-			return nil, fmt.Errorf("failed to create ownership from record %s: %w", record.GetFQDN(), err)
-		} else {
-			p.Log.Debugf("Record has ownership info: %s", record.GetFQDN())
-
-			endpoint, err := ownership.IntoEndpoint()
-			if err != nil {
-				return nil, fmt.Errorf("failed to create endpoint from ownership for record %s: %w", record.GetFQDN(), err)
-			}
-
-			p.Log.Debugf("Ownership endpoint processed: %+v", endpoint)
-
-			endpoints = append(endpoints, endpoint)
-		}
 	}
 
 	return endpoints, nil
@@ -119,7 +97,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	for _, ep := range changes.Delete {
 		switch ep.RecordType {
-		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
+		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
 			record, err := NewDnsRecordFromExistingEndpoint(ep)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
@@ -137,7 +115,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 
 	for _, ep := range changes.UpdateNew {
 		switch ep.RecordType {
-		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
+		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
 			// TODO: need to find the provider specific property probably from the old endpoint probably
 
 			record, err := NewDnsRecordFromExistingEndpoint(ep)
@@ -158,38 +136,10 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 
 	for _, ep := range changes.Create {
 		switch ep.RecordType {
-		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
+		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
 			record, err := NewDnsRecordFromEndpoint(ep)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
-			}
-
-			// try to find the matching text record, if we have it we will set the ownership
-
-			dnsname, err := services.InlineTemplate(
-				fmt.Sprintf("%s%s%s", p.Config.TxtPrefix, record.GetFQDN(), p.Config.TxtSuffix),
-				record,
-			)
-			if err != nil {
-				return fmt.Errorf("failed to inline template for txt record matching: %w", err)
-			}
-			p.Log.Debugf("Looking for matching TXT record for ownership: %s", dnsname)
-
-			matching := slices.IndexFunc(changes.Create, func(e *endpoint.Endpoint) bool {
-				return e.RecordType == endpoint.RecordTypeTXT && e.DNSName == dnsname
-			})
-			if matching > -1 {
-				txt := changes.Create[matching]
-				p.Log.Debugf("Found matching TXT record for ownership: %s", txt.DNSName)
-
-				ownership, err := NewOwnershipRecordFromEndpoint(txt)
-				if err != nil {
-					return fmt.Errorf("failed to create ownership from endpoint %s: %w", txt.DNSName, err)
-				}
-
-				if err := ownership.SetOwnedByForDnsRecord(record); err != nil {
-					return fmt.Errorf("failed to set ownership for record %s: %w", txt.DNSName, err)
-				}
 			}
 
 			p.Log.Debugf("Creating domain override: %s (%s)", ep.DNSName, ep.RecordType)

@@ -2,7 +2,6 @@ package provider
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/browningluke/opnsense-go/pkg/unbound"
@@ -20,35 +19,50 @@ func NewDnsRecord(override unbound.SearchHostOverrideItem) *DnsRecord {
 }
 
 func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
-	if !slices.Contains([]string{endpoint.RecordTypeA, endpoint.RecordTypeAAAA}, ep.RecordType) {
-		return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
-	}
-
 	record := &DnsRecord{
 		SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 			Enabled: "1",
+			Type:    ep.RecordType,
 		},
 	}
 
-	dnsname := strings.SplitN(ep.DNSName, ".", 2)
-	if len(dnsname) != 2 {
-		return nil, fmt.Errorf("invalid dns name: %s", ep.DNSName)
-	}
-	record.Hostname = dnsname[0]
-	record.Domain = dnsname[1]
-	if len(ep.Targets) == 0 {
-		return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
-	} else if len(ep.Targets) > 1 {
-		return nil, fmt.Errorf("multiple targets can not be handled: %s", ep.DNSName)
-	}
-	record.Server = ep.Targets[0]
-	record.Type = ep.RecordType
+	switch ep.RecordType {
+	case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
+		dnsname := strings.SplitN(ep.DNSName, ".", 2)
+		if len(dnsname) != 2 {
+			return nil, fmt.Errorf("invalid dns name: %s", ep.DNSName)
+		}
+		record.Hostname = dnsname[0]
+		record.Domain = dnsname[1]
+		if len(ep.Targets) == 0 {
+			return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
+		} else if len(ep.Targets) > 1 {
+			return nil, fmt.Errorf("multiple targets can not be handled: %s", ep.DNSName)
+		}
+		record.Server = ep.Targets[0]
 
-	if record.Hostname == "*" {
-		return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
+		if record.Hostname == "*" {
+			return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
+		}
+
+		return record, nil
+	case endpoint.RecordTypeTXT:
+		record.Domain = ep.DNSName
+		if len(ep.Targets) == 0 {
+			return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
+		} else if len(ep.Targets) > 1 {
+			return nil, fmt.Errorf("multiple targets can not be handled: %s", ep.DNSName)
+		}
+		record.TxtData = ep.Targets[0]
+
+		if record.Hostname == "*" {
+			return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
+		}
+
+		return record, nil
 	}
 
-	return record, nil
+	return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
 }
 
 func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
@@ -79,6 +93,17 @@ func (r *DnsRecord) GetFQDN() string {
 	return fmt.Sprintf("%s.%s", r.Hostname, r.Domain)
 }
 
+func (r *DnsRecord) GetTarget() []string {
+	switch r.Type {
+	case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
+		return []string{r.Server}
+	case endpoint.RecordTypeTXT:
+		return []string{r.TxtData}
+	default:
+		return []string{}
+	}
+}
+
 func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
 	return &unbound.HostOverride{
 		Enabled:     r.Enabled,
@@ -89,5 +114,6 @@ func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
 		MXPriority:  r.MXPriority,
 		MXDomain:    r.MXDomain,
 		Description: r.Description,
+		TxtData:     r.TxtData,
 	}
 }
