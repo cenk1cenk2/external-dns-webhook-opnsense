@@ -178,27 +178,5 @@ func BindFlags(c *Config) []cli.Flag {
 			Required:    false,
 			Destination: &c.Provider.DomainFilter.RegexDomainExclusion,
 		},
-
-		&cli.StringFlag{
-			Name:  "txt-prefix",
-			Usage: "Prefix for TXT records used for ownership verification. format(template)",
-			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("TXT_PREFIX"),
-			),
-			Required:    false,
-			Value:       "{{ .Type | lower }}-",
-			Destination: &c.Provider.TxtPrefix,
-		},
-
-		&cli.StringFlag{
-			Name:  "txt-suffix",
-			Usage: "Suffix for TXT records used for ownership verification. format(template)",
-			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("TXT_SUFFIX"),
-			),
-			Required:    false,
-			Value:       "",
-			Destination: &c.Provider.TxtSuffix,
-		},
 	}
 }

@@ -1,4 +1,7 @@
 ---
+default:
+  interruptible: true
+
 stages:
   - install
   - build
@@ -14,7 +17,8 @@ include:
       - /go/test.gitlab-ci.yml
       - /go/build.gitlab-ci.yml
     inputs:
-      version: 1.25-alpine
+      rules:
+        - when: always
 
   - project: devops/pipelines
     ref: semantic-release@1.6.0
@@ -25,13 +29,6 @@ include:
     ref: buildah@1.2.2
     file:
       - /buildah/build.gitlab-ci.yml
-    inputs:
-      rules:
-        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-  - project: devops/pipelines
-    ref: buildah@1.2.2
-    file:
       - /buildah/registry-dockerhub.gitlab-ci.yml
 
   - project: devops/pipelines
@@ -40,6 +37,7 @@ include:
       - /references/gh-status.gitlab-ci.yml
 
 variables:
+  GO_VERSION: "1.25-alpine"
   TAGS_FILE: .tags
   GITHUB_STATUS_PROJECT: cenk1cenk2/external-dns-webhook-opnsense
 
@@ -78,8 +76,10 @@ publish:
   stage: publish
   variables:
     CONTAINER_IMAGE_NAME: cenk1cenk2/external-dns-webhook-opnsense
-    CONTAINER_IMAGE_TAGS: snapshot
+    CONTAINER_IMAGE_TAGS: $CI_COMMIT_TAG
     CONTAINER_IMAGE_BUILD_ARGS: |-
       BIN: ./dist/external-dns-webhook-opnsense-linux-amd64
   extends:
     - .container-build
+  rules:
+    - if: $CI_COMMIT_TAG
