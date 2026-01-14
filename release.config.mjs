@@ -28,11 +28,5 @@ export default {
       },
     ],
     ["@semantic-release/github", {}],
-    [
-      "@semantic-release/exec",
-      {
-        publishCmd: "echo 'v${nextRelease.version}' > $TAGS_FILE",
-      },
-    ],
   ],
 };
