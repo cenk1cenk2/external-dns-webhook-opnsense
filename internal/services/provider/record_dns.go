@@ -50,6 +50,7 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 			record := &DnsRecord{
 				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 					Enabled:     "1",
+					Id:          ep.SetIdentifier,
 					Type:        ep.RecordType,
 					Hostname:    hostname,
 					Domain:      domain,
@@ -71,6 +72,7 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 			record := &DnsRecord{
 				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 					Enabled:     "1",
+					Id:          ep.SetIdentifier,
 					Type:        ep.RecordType,
 					Domain:      ep.DNSName,
 					TxtData:     target,
