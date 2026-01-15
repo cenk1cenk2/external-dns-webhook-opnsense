@@ -209,8 +209,7 @@ var _ = Describe("records", func() {
 			c, res := fixtures.CreateEchoContext(nil, req)
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-			Expect(res.Code).To(Equal(http.StatusOK))
-			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+			Expect(res.Code).To(Equal(http.StatusNoContent))
 		})
 
 		When("deleting records", func() {
@@ -235,8 +234,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
 			It("should be able to handle TXT records", func() {
@@ -257,8 +255,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})
 
@@ -302,8 +299,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
 			It("should be able to handle TXT records", func() {
@@ -332,8 +328,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})
 
@@ -375,8 +370,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
 			It("should be able to handle TXT records", func() {
@@ -404,8 +398,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
 			It("should be able to handle mixed A and TXT records (external-dns ownership pattern)", func() {
@@ -465,8 +458,7 @@ var _ = Describe("records", func() {
 				c, res := fixtures.CreateEchoContext(nil, req)
 
 				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
-				Expect(res.Code).To(Equal(http.StatusOK))
-				Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
+				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})
 	})

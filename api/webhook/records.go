@@ -38,7 +38,5 @@ func (h *Handler) HandleRecordsPost(c *ctx.Context) error {
 		return c.NewHTTPError(http.StatusUnprocessableEntity, err)
 	}
 
-	c.Response().Header().Set(echo.HeaderContentType, ExternalDnsAcceptedMedia)
-
-	return c.NoContent(http.StatusOK)
+	return c.NoContent(http.StatusNoContent)
 }

@@ -76,15 +76,6 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
-		if record.IsDrifted() {
-			p.Log.Debugf("Record has drifted, will fix at next adjust: %s", record.GetFQDN())
-
-			ep.WithProviderSpecific(
-				ProviderSpecificDrifted.String(),
-				"true",
-			)
-		}
-
 		p.Log.Debugf("Endpoint processed: %+v", ep)
 
 		endpoints = append(endpoints, ep)
@@ -98,6 +89,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.Delete {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
+			// Extract UUID from endpoint - validates UUID exists and returns error if missing
 			record, err := NewDnsRecordFromExistingEndpoint(ep)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
@@ -116,8 +108,8 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.UpdateNew {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			// TODO: need to find the provider specific property probably from the old endpoint probably
-
+			// Extract UUID from endpoint's provider-specific properties
+			// NewDnsRecordFromExistingEndpoint validates UUID exists and returns error if missing
 			record, err := NewDnsRecordFromExistingEndpoint(ep)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
@@ -158,26 +150,6 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 }
 
 func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
-	for _, ep := range endpoints {
-		_, drifted := ep.GetProviderSpecificProperty(ProviderSpecificDrifted.String())
-
-		if !drifted {
-			continue
-		}
-
-		p.Log.Warnf("Endpoint is drifted, adjusting accordingly: %s", ep.DNSName)
-
-		record, err := NewDnsRecordFromExistingEndpoint(ep)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
-		}
-
-		p.Log.Debugf("Updating drifted endpoint: %s (%s)", ep.DNSName, ep.RecordType)
-		if err := p.Client.UnboundUpdateHostOverride(context.Background(), record.Id, record.IntoHostOverride()); err != nil {
-			return nil, fmt.Errorf("failed to update drifted endpoint %s: %w", ep.DNSName, err)
-		}
-	}
-
 	return endpoints, nil
 }
 

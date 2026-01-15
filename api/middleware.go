@@ -53,14 +53,18 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 }
 
 func (a *Api) HTTPErrorHandler(err error, c echo.Context) {
+	log := a.Logger.WithEchoContext(c)
+
 	var e *echo.HTTPError
 	if ok := errors.As(err, &e); ok {
 		if cast, o := e.Message.(error); o {
+			log.Errorf("HTTP %d - %s", e.Code, cast.Error())
 			_ = c.JSON(e.Code, interfaces.ApiError{
 				Status:  e.Code,
 				Message: cast.Error(),
 			})
 		} else {
+			log.Errorf("HTTP %d - %s", e.Code, e.Message)
 			_ = c.JSON(e.Code, interfaces.ApiError{
 				Status:  e.Code,
 				Message: e.Message.(string),
@@ -70,6 +74,7 @@ func (a *Api) HTTPErrorHandler(err error, c echo.Context) {
 		return
 	}
 
+	log.Errorf("HTTP %d - %s", http.StatusInternalServerError, err.Error())
 	_ = c.JSON(http.StatusInternalServerError, interfaces.ApiError{
 		Status:  http.StatusInternalServerError,
 		Message: err.Error(),

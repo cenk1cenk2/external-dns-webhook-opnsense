@@ -85,10 +85,6 @@ func (r *DnsRecord) IsEnabled() bool {
 	return r.Enabled == "1"
 }
 
-func (r *DnsRecord) IsDrifted() bool {
-	return !r.IsEnabled()
-}
-
 func (r *DnsRecord) GetFQDN() string {
 	// TXT records store the full FQDN in Domain field with empty Hostname
 	if r.Type == endpoint.RecordTypeTXT {
