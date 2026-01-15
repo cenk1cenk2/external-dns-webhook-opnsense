@@ -26,6 +26,10 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 		},
 	}
 
+	if desc, exists := ep.GetProviderSpecificProperty(ProviderSpecificDescription.String()); exists {
+		record.Description = desc
+	}
+
 	switch ep.RecordType {
 	case endpoint.RecordTypeA, endpoint.RecordTypeAAAA:
 		dnsname := strings.SplitN(ep.DNSName, ".", 2)
@@ -45,7 +49,6 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 			return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
 		}
 
-		return record, nil
 	case endpoint.RecordTypeTXT:
 		record.Domain = ep.DNSName
 		if len(ep.Targets) == 0 {
@@ -59,10 +62,12 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 			return nil, fmt.Errorf("wildcard hostnames are not supported in opnsense: %s", ep.DNSName)
 		}
 
-		return record, nil
+	default:
+		return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
+
 	}
 
-	return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
+	return record, nil
 }
 
 func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {

@@ -76,6 +76,13 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
+		if record.Description != "" {
+			ep.WithProviderSpecific(
+				ProviderSpecificDescription.String(),
+				record.Description,
+			)
+		}
+
 		p.Log.Debugf("Endpoint processed: %+v", ep)
 
 		endpoints = append(endpoints, ep)

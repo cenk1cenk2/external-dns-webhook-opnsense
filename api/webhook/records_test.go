@@ -141,6 +141,51 @@ var _ = Describe("records", func() {
 			))
 		})
 
+		It("should be able to fetch records with descriptions", func() {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
+				&unbound.SearchHostOverrideResponse{
+					Total:    1,
+					RowCount: 1,
+					Current:  1,
+					Rows: []unbound.SearchHostOverrideItem{
+						{
+							Id:          "id-with-desc",
+							Enabled:     "1",
+							Hostname:    "api",
+							Domain:      "example.com",
+							Type:        "A",
+							Server:      "192.168.1.50",
+							Description: "Production API endpoint",
+						},
+					},
+				},
+				nil,
+			).Once()
+
+			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusOK))
+
+			var body []endpoint.Endpoint
+			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(body).To(HaveLen(1))
+
+			Expect(body[0].DNSName).To(Equal("api.example.com"))
+			Expect(body[0].ProviderSpecific).To(ContainElements(
+				endpoint.ProviderSpecificProperty{
+					Name:  provider.ProviderSpecificUUID.String(),
+					Value: "id-with-desc",
+				},
+				endpoint.ProviderSpecificProperty{
+					Name:  provider.ProviderSpecificDescription.String(),
+					Value: "Production API endpoint",
+				},
+			))
+		})
+
 		It("should be able to fetch mixed A and TXT records", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
@@ -393,6 +438,37 @@ var _ = Describe("records", func() {
 						TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
 					}).
 					Return("id-txt", nil).
+					Once()
+
+				c, res := fixtures.CreateEchoContext(nil, req)
+
+				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(res.Code).To(Equal(http.StatusNoContent))
+			})
+
+			It("should be able to create records with descriptions", func() {
+				req := httptest.NewRequest(
+					http.MethodPost,
+					"/",
+					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						Create: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("api.example.com", endpoint.RecordTypeA, "192.168.1.50").
+								WithProviderSpecific(provider.ProviderSpecificDescription.String(), "Production API endpoint"),
+						},
+					})),
+				)
+				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+				mocks.Client.EXPECT().
+					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+						Enabled:     "1",
+						Hostname:    "api",
+						Domain:      "example.com",
+						Type:        "A",
+						Server:      "192.168.1.50",
+						Description: "Production API endpoint",
+					}).
+					Return("id-api", nil).
 					Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
