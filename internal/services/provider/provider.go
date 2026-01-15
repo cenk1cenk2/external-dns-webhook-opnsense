@@ -67,7 +67,8 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithSetIdentifier(record.Id)
+			WithSetIdentifier(record.GenerateSetIdentifier()).
+			WithProviderSpecific(ProviderSpecificUUID.String(), record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
@@ -92,15 +93,16 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.Delete {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			if ep.SetIdentifier == "" {
-				return fmt.Errorf("no opnsense identifier found for endpoint %s", ep.DNSName)
+			record, err := NewDnsRecordFromExistingEndpoint(ep)
+			if err != nil {
+				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
 			}
 
-			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
-			if err := p.Client.UnboundDeleteHostOverride(ctx, ep.SetIdentifier); err != nil {
-				return fmt.Errorf("failed to delete domain override %s with id %s: %w", ep.DNSName, ep.SetIdentifier, err)
+			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+			if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
+				return fmt.Errorf("failed to delete domain override %s: %w", ep.DNSName, err)
 			}
-			p.Log.Infof("Deleted domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
+			p.Log.Infof("Deleted domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
 		}
@@ -109,27 +111,16 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.UpdateNew {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			if ep.SetIdentifier == "" {
-				return fmt.Errorf("no opnsense identifier found for endpoint %s", ep.DNSName)
-			}
-
-			p.Log.Debugf("Deleting old domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
-			if err := p.Client.UnboundDeleteHostOverride(ctx, ep.SetIdentifier); err != nil {
-				return fmt.Errorf("failed to delete old domain override %s with id %s: %w", ep.DNSName, ep.SetIdentifier, err)
-			}
-
-			records, err := NewDnsRecordsFromEndpoint(ep)
+			record, err := NewDnsRecordFromExistingEndpoint(ep)
 			if err != nil {
-				return fmt.Errorf("failed to create records from endpoint %s: %w", ep.DNSName, err)
+				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
 			}
 
-			for _, record := range records {
-				p.Log.Debugf("Creating new domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
-				if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
-					return fmt.Errorf("failed to create new domain override %s: %w", ep.DNSName, err)
-				}
-				p.Log.Infof("Updated domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
+			p.Log.Debugf("Updating domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
+				return fmt.Errorf("failed to update domain override %s: %w", ep.DNSName, err)
 			}
+			p.Log.Infof("Updated domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
 
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
@@ -162,7 +153,42 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 }
 
 func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
-	return endpoints, nil
+	// opnsense unbound dns doesn't support multiple targets per record.
+	// split endpoints with multiple targets into separate endpoints with unique setidentifiers.
+	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
+
+	for _, ep := range endpoints {
+		// endpoint has multiple targets, split into separate endpoints
+		if len(ep.Targets) > 1 && ep.SetIdentifier == "" {
+			p.Log.Debugf("Splitting endpoint %s with %d targets into separate endpoints", ep.DNSName, len(ep.Targets))
+
+			records, err := NewDnsRecordsFromEndpoint(ep)
+			if err != nil {
+				p.Log.Errorf("Failed to create records from endpoint %s: %v", ep.DNSName, err)
+				continue
+			}
+
+			for _, record := range records {
+				e := &endpoint.Endpoint{
+					DNSName:          ep.DNSName,
+					Targets:          record.GetTarget(),
+					RecordType:       ep.RecordType,
+					SetIdentifier:    record.GenerateSetIdentifier(),
+					RecordTTL:        ep.RecordTTL,
+					Labels:           ep.Labels,
+					ProviderSpecific: ep.ProviderSpecific,
+				}
+
+				adjusted = append(adjusted, e)
+				p.Log.Debugf("Created endpoint with set identifier: %s for %+v from %+v", e.SetIdentifier, e, ep)
+			}
+		} else {
+			adjusted = append(adjusted, ep)
+			p.Log.Debugf("Keeping endpoint as is: %+v", ep)
+		}
+	}
+
+	return adjusted, nil
 }
 
 // GetDomainFilter returns the domain filter for this provider.

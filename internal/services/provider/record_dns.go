@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -50,7 +51,6 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 			record := &DnsRecord{
 				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 					Enabled:     "1",
-					Id:          ep.SetIdentifier,
 					Type:        ep.RecordType,
 					Hostname:    hostname,
 					Domain:      domain,
@@ -72,7 +72,6 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 			record := &DnsRecord{
 				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
 					Enabled:     "1",
-					Id:          ep.SetIdentifier,
 					Type:        ep.RecordType,
 					Domain:      ep.DNSName,
 					TxtData:     target,
@@ -88,15 +87,46 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 	return nil, fmt.Errorf("unsupported record type: %s", ep.RecordType)
 }
 
+func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
+	if len(ep.Targets) == 0 {
+		return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
+	} else if len(ep.Targets) > 1 {
+		return nil, fmt.Errorf("multiple targets can not be handled: %s", ep.DNSName)
+	}
+
+	records, err := NewDnsRecordsFromEndpoint(ep)
+	if err != nil {
+		return nil, err
+	}
+
+	return records[0], nil
+}
+
+func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
+	id, exists := ep.GetProviderSpecificProperty(ProviderSpecificUUID.String())
+	if !exists {
+		return nil, fmt.Errorf("provider specific id not found attached to the endpoint")
+	}
+
+	record, err := NewDnsRecordFromEndpoint(ep)
+	if err != nil {
+		return nil, err
+	}
+
+	record.Id = id
+
+	return record, nil
+}
+
 func (r *DnsRecord) IsEnabled() bool {
 	return r.Enabled == "1"
 }
 
 func (r *DnsRecord) GetFQDN() string {
-	// TXT records store the full FQDN in Domain field with empty Hostname
 	if r.Type == endpoint.RecordTypeTXT {
 		return r.Domain
 	}
+
 	return fmt.Sprintf("%s.%s", r.Hostname, r.Domain)
 }
 
@@ -109,6 +139,14 @@ func (r *DnsRecord) GetTarget() []string {
 	default:
 		return []string{}
 	}
+}
+
+// GenerateSetIdentifier creates a stable identifier based on the record's data.
+func (r *DnsRecord) GenerateSetIdentifier() string {
+	data := fmt.Sprintf("%s:%s:%s", r.GetFQDN(), r.Type, strings.Join(r.GetTarget(), ","))
+	hash := sha256.Sum256([]byte(data))
+
+	return fmt.Sprintf("%x", hash[:8])
 }
 
 func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
