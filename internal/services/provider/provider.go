@@ -158,33 +158,40 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
 
 	for _, ep := range endpoints {
-		// endpoint has multiple targets, split into separate endpoints
-		if len(ep.Targets) > 1 && ep.SetIdentifier == "" {
-			p.Log.Debugf("Splitting endpoint %s with %d targets into separate endpoints", ep.DNSName, len(ep.Targets))
-
-			records, err := NewDnsRecordsFromEndpoint(ep)
-			if err != nil {
-				p.Log.Errorf("Failed to create records from endpoint %s: %v", ep.DNSName, err)
-				continue
-			}
-
-			for _, record := range records {
-				e := &endpoint.Endpoint{
-					DNSName:          ep.DNSName,
-					Targets:          record.GetTarget(),
-					RecordType:       ep.RecordType,
-					SetIdentifier:    record.GenerateSetIdentifier(),
-					RecordTTL:        ep.RecordTTL,
-					Labels:           ep.Labels,
-					ProviderSpecific: ep.ProviderSpecific,
-				}
-
-				adjusted = append(adjusted, e)
-				p.Log.Debugf("Created endpoint with set identifier: %s for %+v from %+v", e.SetIdentifier, e, ep)
-			}
-		} else {
+		if ep.SetIdentifier != "" {
 			adjusted = append(adjusted, ep)
-			p.Log.Debugf("Keeping endpoint as is: %+v", ep)
+			p.Log.Debugf("keeping endpoint: %+v with existing set identifier %s", ep, ep.SetIdentifier)
+
+			continue
+		}
+
+		if len(ep.Targets) == 0 {
+			p.Log.Debugf("skipping endpoint: %+v with no targets", ep)
+			adjusted = append(adjusted, ep)
+
+			continue
+		}
+
+		records, err := NewDnsRecordsFromEndpoint(ep)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
+		}
+
+		p.Log.Debugf("endpoint %s with %d targets", ep.DNSName, len(records))
+
+		for _, record := range records {
+			e := &endpoint.Endpoint{
+				DNSName:          ep.DNSName,
+				Targets:          record.GetTarget(),
+				RecordType:       ep.RecordType,
+				SetIdentifier:    record.GenerateSetIdentifier(),
+				RecordTTL:        ep.RecordTTL,
+				Labels:           ep.Labels,
+				ProviderSpecific: ep.ProviderSpecific,
+			}
+
+			adjusted = append(adjusted, e)
+			p.Log.Debugf("endpoint with: set identifier %s for endpoint %+v", e.SetIdentifier, e)
 		}
 	}
 
