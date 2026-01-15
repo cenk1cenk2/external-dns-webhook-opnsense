@@ -27,4 +27,3 @@ func (h *Handler) HandleAdjustEndpointsPost(c *ctx.Context) error {
 
 	return c.JSON(http.StatusOK, endpoints)
 }
-
