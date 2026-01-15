@@ -77,8 +77,11 @@ version:
   extends:
     - .semantic-release
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: on_success
+    - if: "$CI_COMMIT_REF_NAME =~ /^(next|next-major|alpha|beta|rc)$/"
+      when: on_success
+    - when: never
 
 publish:
   stage: publish

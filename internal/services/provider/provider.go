@@ -58,7 +58,6 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 
 		if !p.GetDomainFilter().Match(record.GetFQDN()) {
 			p.Log.Debugf("Skipping record due to domain filter: %s", record.GetFQDN())
-
 			continue
 		}
 
@@ -68,10 +67,7 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithProviderSpecific(
-				ProviderSpecificUUID.String(),
-				record.Id,
-			)
+			WithSetIdentifier(record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
@@ -96,17 +92,15 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.Delete {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			// Extract UUID from endpoint - validates UUID exists and returns error if missing
-			record, err := NewDnsRecordFromExistingEndpoint(ep)
-			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+			if ep.SetIdentifier == "" {
+				return fmt.Errorf("no opnsense identifier found for endpoint %s", ep.DNSName)
 			}
 
-			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record)
-			if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
-				return fmt.Errorf("failed to delete domain override %s: %w", ep.DNSName, err)
+			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
+			if err := p.Client.UnboundDeleteHostOverride(ctx, ep.SetIdentifier); err != nil {
+				return fmt.Errorf("failed to delete domain override %s with id %s: %w", ep.DNSName, ep.SetIdentifier, err)
 			}
-			p.Log.Infof("Deleted domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+			p.Log.Infof("Deleted domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
 		}
@@ -115,18 +109,27 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.UpdateNew {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			// Extract UUID from endpoint's provider-specific properties
-			// NewDnsRecordFromExistingEndpoint validates UUID exists and returns error if missing
-			record, err := NewDnsRecordFromExistingEndpoint(ep)
-			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+			if ep.SetIdentifier == "" {
+				return fmt.Errorf("no opnsense identifier found for endpoint %s", ep.DNSName)
 			}
 
-			p.Log.Debugf("Updating domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
-			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to update domain override %s: %w", ep.DNSName, err)
+			p.Log.Debugf("Deleting old domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, ep.SetIdentifier)
+			if err := p.Client.UnboundDeleteHostOverride(ctx, ep.SetIdentifier); err != nil {
+				return fmt.Errorf("failed to delete old domain override %s with id %s: %w", ep.DNSName, ep.SetIdentifier, err)
 			}
-			p.Log.Infof("Updated domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+
+			records, err := NewDnsRecordsFromEndpoint(ep)
+			if err != nil {
+				return fmt.Errorf("failed to create records from endpoint %s: %w", ep.DNSName, err)
+			}
+
+			for _, record := range records {
+				p.Log.Debugf("Creating new domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
+				if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
+					return fmt.Errorf("failed to create new domain override %s: %w", ep.DNSName, err)
+				}
+				p.Log.Infof("Updated domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
+			}
 
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
@@ -136,16 +139,18 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.Create {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			record, err := NewDnsRecordFromEndpoint(ep)
+			records, err := NewDnsRecordsFromEndpoint(ep)
 			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+				return fmt.Errorf("failed to create records from endpoint %s: %w", ep.DNSName, err)
 			}
 
-			p.Log.Debugf("Creating domain override: %s (%s)", ep.DNSName, ep.RecordType)
-			if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to create domain override %s: %w", ep.DNSName, err)
+			for _, record := range records {
+				p.Log.Debugf("Creating domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
+				if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
+					return fmt.Errorf("failed to create domain override %s: %w", ep.DNSName, err)
+				}
+				p.Log.Infof("Created domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
 			}
-			p.Log.Infof("Created domain override: %s (%s)", ep.DNSName, ep.RecordType)
 
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
