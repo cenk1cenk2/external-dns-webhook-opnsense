@@ -221,6 +221,13 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 		// Handle TXT records
 		if ep.RecordType == endpoint.RecordTypeTXT {
 			originalDNSName := p.extractOriginalDNSNameFromTXTRecord(ep.DNSName)
+			p.Log.Debugf(
+				"TXT record %s -> extracted original name: %s, exists in map: %v, is different: %v",
+				ep.DNSName,
+				originalDNSName,
+				dnsNameToSetIDs[originalDNSName] != nil,
+				originalDNSName != ep.DNSName,
+			)
 			if setIDs, exists := dnsNameToSetIDs[originalDNSName]; exists && originalDNSName != ep.DNSName {
 				p.Log.Debugf("splitting TXT registry record %s into %d records for SetIdentifiers: %v", ep.DNSName, len(setIDs), setIDs)
 				for _, setID := range setIDs {
@@ -236,6 +243,7 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 					adjusted = append(adjusted, e)
 					p.Log.Debugf("created TXT endpoint with SetIdentifier %s for %s", setID, ep.DNSName)
 				}
+				continue
 			}
 		}
 
