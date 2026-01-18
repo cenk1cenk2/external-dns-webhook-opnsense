@@ -432,6 +432,12 @@ var _ = Describe("records", func() {
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						UpdateOld: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+						},
 						UpdateNew: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
 								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
@@ -475,6 +481,10 @@ var _ = Describe("records", func() {
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+						UpdateOld: []*endpoint.Endpoint{
+							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=updated-cluster").
+								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+						},
 						UpdateNew: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=updated-cluster").
 								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),

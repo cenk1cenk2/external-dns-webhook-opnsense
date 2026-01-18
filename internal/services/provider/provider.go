@@ -20,9 +20,6 @@ type Provider struct {
 	Log          services.ZapSugaredLogger
 	Client       opnsense.ClientAdapter
 	DomainFilter endpoint.DomainFilterInterface
-
-	// Cache of SetIdentifier -> UUID for looking up UUIDs when they're not provided
-	Cache map[string]string
 }
 
 type ProviderSvc struct {
@@ -43,7 +40,6 @@ func NewProvider(svc *ProviderSvc, conf ProviderConfig) (*Provider, error) {
 		Client:       svc.Client,
 		Log:          svc.Logger.WithCaller().With(zap.String("service", "provider")),
 		DomainFilter: NewDomainFilter(conf.DomainFilter),
-		Cache:        make(map[string]string),
 	}, nil
 }
 
@@ -84,9 +80,6 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			)
 		}
 
-		p.Cache[ep.SetIdentifier] = record.Id
-		p.Log.Debugf("Cached UUID mapping: SetIdentifier=%s -> UUID=%s", ep.SetIdentifier, record.Id)
-
 		p.Log.Debugf("Endpoint processed: %+v", ep)
 
 		endpoints = append(endpoints, ep)
@@ -115,22 +108,31 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 		}
 	}
 
-	for _, ep := range changes.UpdateNew {
-		switch ep.RecordType {
+	// UpdateOld and UpdateNew are parallel arrays with matching indices
+	for i, n := range changes.UpdateNew {
+		o := changes.UpdateOld[i]
+
+		switch n.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			record, err := NewDnsRecordFromExistingEndpoint(ep)
-			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+			uuid, exists := o.GetProviderSpecificProperty(ProviderSpecificUUID.String())
+			if !exists {
+				return fmt.Errorf("can not find uuid in old endpoint: %s %s", o.RecordType, o.DNSName)
 			}
 
-			p.Log.Debugf("Updating domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
-			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to update domain override %s: %w", ep.DNSName, err)
+			record, err := NewDnsRecordFromExistingEndpoint(n)
+			if err != nil {
+				return fmt.Errorf("failed to create record from endpoint %s: %w", n.DNSName, err)
 			}
-			p.Log.Infof("Updated domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+			record.Id = uuid
+
+			p.Log.Debugf("Updating domain override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
+			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
+				return fmt.Errorf("failed to update domain override %s: %w", n.DNSName, err)
+			}
+			p.Log.Infof("Updated domain override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
 
 		default:
-			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
+			p.Log.Warnf("Record type is not supported: %s -> %s", n.RecordType, n.DNSName)
 		}
 	}
 
@@ -166,14 +168,6 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 
 	for _, ep := range endpoints {
 		if ep.SetIdentifier != "" {
-			if _, exists := ep.GetProviderSpecificProperty(ProviderSpecificUUID.String()); !exists {
-				if uuid, found := p.Cache[ep.SetIdentifier]; found {
-					p.Log.Debugf("Attaching cached UUID to endpoint %s: SetIdentifier: %s -> UUID: %s", ep.DNSName, ep.SetIdentifier, uuid)
-					ep.SetProviderSpecificProperty(ProviderSpecificUUID.String(), uuid)
-				} else {
-					p.Log.Warnf("SetIdentifier %s not found in cache for endpoint %s - endpoint may not have UUID attached", ep.SetIdentifier, ep.DNSName)
-				}
-			}
 			adjusted = append(adjusted, ep)
 			p.Log.Debugf("keeping endpoint: %+v with existing set identifier %s", ep, ep.SetIdentifier)
 
@@ -203,13 +197,6 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 				RecordTTL:        ep.RecordTTL,
 				Labels:           ep.Labels,
 				ProviderSpecific: ep.ProviderSpecific,
-			}
-
-			if uuid, found := p.Cache[e.SetIdentifier]; found {
-				p.Log.Debugf("Attaching cached UUID to split endpoint %s: SetIdentifier: %s -> UUID: %s", e.DNSName, e.SetIdentifier, uuid)
-				e.SetProviderSpecificProperty(ProviderSpecificUUID.String(), uuid)
-			} else {
-				p.Log.Debugf("No cached UUID for split endpoint %s: SetIdentifier: %s -> this is a new record", e.DNSName, e.SetIdentifier)
 			}
 
 			adjusted = append(adjusted, e)
