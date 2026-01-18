@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -58,7 +59,6 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 
 		if !p.GetDomainFilter().Match(record.GetFQDN()) {
 			p.Log.Debugf("Skipping record due to domain filter: %s", record.GetFQDN())
-
 			continue
 		}
 
@@ -68,10 +68,8 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithProviderSpecific(
-				ProviderSpecificUUID.String(),
-				record.Id,
-			)
+			WithSetIdentifier(record.GenerateSetIdentifier()).
+			WithProviderSpecific(ProviderSpecificUUID.String(), record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
@@ -96,13 +94,12 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	for _, ep := range changes.Delete {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			// Extract UUID from endpoint - validates UUID exists and returns error if missing
 			record, err := NewDnsRecordFromExistingEndpoint(ep)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
 			}
 
-			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record)
+			p.Log.Debugf("Deleting domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
 			if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
 				return fmt.Errorf("failed to delete domain override %s: %w", ep.DNSName, err)
 			}
@@ -112,40 +109,49 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 		}
 	}
 
-	for _, ep := range changes.UpdateNew {
-		switch ep.RecordType {
+	// UpdateOld and UpdateNew are parallel arrays with matching indices
+	for i, n := range changes.UpdateNew {
+		o := changes.UpdateOld[i]
+
+		switch n.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			// Extract UUID from endpoint's provider-specific properties
-			// NewDnsRecordFromExistingEndpoint validates UUID exists and returns error if missing
-			record, err := NewDnsRecordFromExistingEndpoint(ep)
-			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+			uuid, exists := o.GetProviderSpecificProperty(ProviderSpecificUUID.String())
+			if !exists {
+				return fmt.Errorf("can not find uuid in old endpoint: %s %s", o.RecordType, o.DNSName)
 			}
 
-			p.Log.Debugf("Updating domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
-			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to update domain override %s: %w", ep.DNSName, err)
+			record, err := NewDnsRecordFromExistingEndpoint(n)
+			if err != nil {
+				return fmt.Errorf("failed to create record from endpoint %s: %w", n.DNSName, err)
 			}
-			p.Log.Infof("Updated domain override: %s (%s) with id %s", ep.DNSName, ep.RecordType, record.Id)
+			record.Id = uuid
+
+			p.Log.Debugf("Updating domain override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
+			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
+				return fmt.Errorf("failed to update domain override %s: %w", n.DNSName, err)
+			}
+			p.Log.Infof("Updated domain override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
 
 		default:
-			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
+			p.Log.Warnf("Record type is not supported: %s -> %s", n.RecordType, n.DNSName)
 		}
 	}
 
 	for _, ep := range changes.Create {
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			record, err := NewDnsRecordFromEndpoint(ep)
+			records, err := NewDnsRecordsFromEndpoint(ep)
 			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+				return fmt.Errorf("failed to create records from endpoint %s: %w", ep.DNSName, err)
 			}
 
-			p.Log.Debugf("Creating domain override: %s (%s)", ep.DNSName, ep.RecordType)
-			if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to create domain override %s: %w", ep.DNSName, err)
+			for _, record := range records {
+				p.Log.Debugf("Creating domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
+				if _, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride()); err != nil {
+					return fmt.Errorf("failed to create domain override %s: %w", ep.DNSName, err)
+				}
+				p.Log.Infof("Created domain override: %s (%s) -> %s", ep.DNSName, ep.RecordType, record.GetTarget())
 			}
-			p.Log.Infof("Created domain override: %s (%s)", ep.DNSName, ep.RecordType)
 
 		default:
 			p.Log.Warnf("Record type is not supported: %s -> %s", ep.RecordType, ep.DNSName)
@@ -157,7 +163,121 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 }
 
 func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
-	return endpoints, nil
+	// opnsense unbound dns doesn't support multiple targets per record.
+	// split endpoints with multiple targets into separate endpoints with unique setidentifiers.
+	// also handle TXT registry records - split them to match their corresponding A/AAAA records
+
+	// First pass: build map of DNS names to their SetIdentifiers from multi-target A/AAAA records
+	dnsNameToSetIDs := make(map[string][]string)
+
+	for _, ep := range endpoints {
+		// Skip endpoints that already have SetIdentifiers or no targets
+		if ep.SetIdentifier != "" || len(ep.Targets) == 0 {
+			continue
+		}
+
+		// Skip TXT records in this pass
+		if ep.RecordType == endpoint.RecordTypeTXT {
+			continue
+		}
+
+		// Only process A/AAAA records with multiple targets
+		if len(ep.Targets) <= 1 {
+			continue
+		}
+
+		records, err := NewDnsRecordsFromEndpoint(ep)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
+		}
+
+		setIDs := make([]string, 0, len(records))
+		for _, record := range records {
+			setIDs = append(setIDs, record.GenerateSetIdentifier())
+		}
+
+		dnsNameToSetIDs[ep.DNSName] = setIDs
+		p.Log.Debugf("collected %d SetIdentifiers for %s: %v", len(setIDs), ep.DNSName, setIDs)
+	}
+
+	// Second pass: split all endpoints
+	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
+
+	for _, ep := range endpoints {
+		// Keep endpoints that already have SetIdentifiers
+		if ep.SetIdentifier != "" {
+			adjusted = append(adjusted, ep)
+			p.Log.Debugf("keeping endpoint: %+v with existing set identifier %s", ep, ep.SetIdentifier)
+			continue
+		}
+
+		// Keep endpoints with no targets
+		if len(ep.Targets) == 0 {
+			p.Log.Debugf("skipping endpoint: %+v with no targets", ep)
+			adjusted = append(adjusted, ep)
+			continue
+		}
+
+		// Handle TXT records
+		if ep.RecordType == endpoint.RecordTypeTXT {
+			originalDNSName := p.extractOriginalDNSNameFromTXTRecord(ep.DNSName)
+			if setIDs, exists := dnsNameToSetIDs[originalDNSName]; exists && originalDNSName != ep.DNSName {
+				p.Log.Debugf("splitting TXT registry record %s into %d records for SetIdentifiers: %v", ep.DNSName, len(setIDs), setIDs)
+				for _, setID := range setIDs {
+					e := &endpoint.Endpoint{
+						DNSName:          ep.DNSName,
+						Targets:          ep.Targets,
+						RecordType:       ep.RecordType,
+						SetIdentifier:    setID,
+						RecordTTL:        ep.RecordTTL,
+						Labels:           ep.Labels,
+						ProviderSpecific: ep.ProviderSpecific,
+					}
+					adjusted = append(adjusted, e)
+					p.Log.Debugf("created TXT endpoint with SetIdentifier %s for %s", setID, ep.DNSName)
+				}
+			}
+		}
+
+		records, err := NewDnsRecordsFromEndpoint(ep)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
+		}
+
+		p.Log.Debugf("endpoint %s with %d targets", ep.DNSName, len(records))
+
+		for _, record := range records {
+			setID := record.GenerateSetIdentifier()
+
+			e := &endpoint.Endpoint{
+				DNSName:          ep.DNSName,
+				Targets:          record.GetTarget(),
+				RecordType:       ep.RecordType,
+				SetIdentifier:    setID,
+				RecordTTL:        ep.RecordTTL,
+				Labels:           ep.Labels,
+				ProviderSpecific: ep.ProviderSpecific,
+			}
+
+			adjusted = append(adjusted, e)
+			p.Log.Debugf("endpoint with: set identifier %s for endpoint %+v", e.SetIdentifier, e)
+		}
+	}
+
+	return adjusted, nil
+}
+
+// extractOriginalDNSNameFromTXTRecord removes the TXT registry prefix from a DNS name
+// TXT registry records are prefixed with the record type (e.g., "a-", "aaaa-", "cname-")
+// For example: "a-showmen.kilic.dev" -> "showmen.kilic.dev"
+//
+//	"aaaa-showmen.kilic.dev" -> "showmen.kilic.dev"
+func (p *Provider) extractOriginalDNSNameFromTXTRecord(txtDNSName string) string {
+	// Find the first hyphen which separates the record type prefix from the DNS name
+	if idx := strings.Index(txtDNSName, "-"); idx > 0 {
+		return txtDNSName[idx+1:]
+	}
+	return txtDNSName
 }
 
 // GetDomainFilter returns the domain filter for this provider.

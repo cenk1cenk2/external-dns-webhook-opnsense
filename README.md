@@ -2,6 +2,9 @@
 
 A webhook provider for [external-dns](https://github.com/kubernetes-sigs/external-dns) that integrates with OPNsense's Unbound DNS service.
 
+> [!IMPORTANT]
+> CURRENTLY AT DOG FOODING STAGE. USE AT YOUR OWN RISK.
+
 ## How It Works
 
 This webhook provider acts as a bridge between `external-dns` and OPNsense's Unbound DNS service.
