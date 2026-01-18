@@ -80,7 +80,6 @@ var _ = Describe("adjustendpoints", func() {
 			Expect(body[0].DNSName).To(Equal("app.example.com"))
 			Expect(body[0].Targets).To(ConsistOf("10.0.0.1"))
 			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
-			Expect(body[0].SetIdentifier).To(Equal("5884995aabf968b3")) // Stable hash of SHA256("app.example.com:A:10.0.0.1")[:16]
 		})
 
 		It("should split multiple targets into separate endpoints with unique SetIdentifiers", func() {

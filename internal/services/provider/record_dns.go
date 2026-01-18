@@ -146,7 +146,7 @@ func (r *DnsRecord) GenerateSetIdentifier() string {
 	data := fmt.Sprintf("%s:%s:%s", r.GetFQDN(), r.Type, strings.Join(r.GetTarget(), ","))
 	hash := sha256.Sum256([]byte(data))
 
-	return fmt.Sprintf("%x", hash[:8])
+	return fmt.Sprintf("%x", hash)
 }
 
 func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
