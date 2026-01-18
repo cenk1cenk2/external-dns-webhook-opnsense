@@ -32,7 +32,7 @@ jobs:
         run: go mod vendor
 
       - name: install mockery
-        run: go install github.com/vektra/mockery/v2@latest
+        run: go install github.com/vektra/mockery/v3@latest
 
       - name: generate mocks
         run: mockery
@@ -57,6 +57,9 @@ jobs:
 
       - name: install dependencies
         run: go mod vendor
+
+      - name: install mockery
+        run: go install github.com/vektra/mockery/v3@latest
 
       - name: generate mocks
         run: mockery
@@ -83,7 +86,7 @@ jobs:
         run: go mod vendor
 
       - name: install mockery
-        run: go install github.com/vektra/mockery/v2@latest
+        run: go install github.com/vektra/mockery/v3@latest
 
       - name: generate mocks
         run: mockery
