@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -68,10 +67,15 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithSetIdentifier(record.GenerateSetIdentifier()).
 			WithProviderSpecific(ProviderSpecificUUID.String(), record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
+		}
+
+		if setIdentifier, exists := ep.Labels["external-dns/set-identifier"]; exists {
+			ep.SetIdentifier = setIdentifier
+		} else {
+			ep.SetIdentifier = record.GenerateSetIdentifier()
 		}
 
 		if record.Description != "" {
@@ -165,94 +169,25 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	// opnsense unbound dns doesn't support multiple targets per record.
 	// split endpoints with multiple targets into separate endpoints with unique setidentifiers.
-	// also handle TXT registry records - split them to match their corresponding A/AAAA records
-
-	// First pass: build map of DNS names to their SetIdentifiers from multi-target A/AAAA records
-	dnsNameToSetIDs := make(map[string][]string)
-
-	for _, ep := range endpoints {
-		// Skip endpoints that already have SetIdentifiers or no targets
-		if ep.SetIdentifier != "" || len(ep.Targets) == 0 {
-			continue
-		}
-
-		// Skip TXT records in this pass
-		if ep.RecordType == endpoint.RecordTypeTXT {
-			continue
-		}
-
-		// Only process A/AAAA records with multiple targets
-		if len(ep.Targets) <= 1 {
-			continue
-		}
-
-		records, err := NewDnsRecordsFromEndpoint(ep)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
-		}
-
-		setIDs := make([]string, 0, len(records))
-		for _, record := range records {
-			setIDs = append(setIDs, record.GenerateSetIdentifier())
-		}
-
-		dnsNameToSetIDs[ep.DNSName] = setIDs
-		p.Log.Debugf("collected %d SetIdentifiers for %s: %v", len(setIDs), ep.DNSName, setIDs)
-	}
-
-	// Second pass: split all endpoints
 	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
 
 	for _, ep := range endpoints {
 		// Keep endpoints that already have SetIdentifiers
 		if ep.SetIdentifier != "" {
 			adjusted = append(adjusted, ep)
-			p.Log.Debugf("keeping endpoint: %+v with existing set identifier %s", ep, ep.SetIdentifier)
 			continue
 		}
 
-		// Keep endpoints with no targets
+		// Skip endpoints with no targets - nothing to create
 		if len(ep.Targets) == 0 {
-			p.Log.Debugf("skipping endpoint: %+v with no targets", ep)
-			adjusted = append(adjusted, ep)
 			continue
 		}
 
-		// Handle TXT records
-		if ep.RecordType == endpoint.RecordTypeTXT {
-			originalDNSName := p.extractOriginalDNSNameFromTXTRecord(ep.DNSName)
-			p.Log.Debugf(
-				"TXT record %s -> extracted original name: %s, exists in map: %v, is different: %v",
-				ep.DNSName,
-				originalDNSName,
-				dnsNameToSetIDs[originalDNSName] != nil,
-				originalDNSName != ep.DNSName,
-			)
-			if setIDs, exists := dnsNameToSetIDs[originalDNSName]; exists && originalDNSName != ep.DNSName {
-				p.Log.Debugf("splitting TXT registry record %s into %d records for SetIdentifiers: %v", ep.DNSName, len(setIDs), setIDs)
-				for _, setID := range setIDs {
-					e := &endpoint.Endpoint{
-						DNSName:          ep.DNSName,
-						Targets:          ep.Targets,
-						RecordType:       ep.RecordType,
-						SetIdentifier:    setID,
-						RecordTTL:        ep.RecordTTL,
-						Labels:           ep.Labels,
-						ProviderSpecific: ep.ProviderSpecific,
-					}
-					adjusted = append(adjusted, e)
-					p.Log.Debugf("created TXT endpoint with SetIdentifier %s for %s", setID, ep.DNSName)
-				}
-				continue
-			}
-		}
-
+		// Process all record types the same way
 		records, err := NewDnsRecordsFromEndpoint(ep)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
 		}
-
-		p.Log.Debugf("endpoint %s with %d targets", ep.DNSName, len(records))
 
 		for _, record := range records {
 			setID := record.GenerateSetIdentifier()
@@ -267,25 +202,14 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 				ProviderSpecific: ep.ProviderSpecific,
 			}
 
+			// Store SetIdentifier in labels so it gets persisted by TXT registry
+			e.WithLabel("external-dns/set-identifier", setID)
+
 			adjusted = append(adjusted, e)
-			p.Log.Debugf("endpoint with: set identifier %s for endpoint %+v", e.SetIdentifier, e)
 		}
 	}
 
 	return adjusted, nil
-}
-
-// extractOriginalDNSNameFromTXTRecord removes the TXT registry prefix from a DNS name
-// TXT registry records are prefixed with the record type (e.g., "a-", "aaaa-", "cname-")
-// For example: "a-showmen.kilic.dev" -> "showmen.kilic.dev"
-//
-//	"aaaa-showmen.kilic.dev" -> "showmen.kilic.dev"
-func (p *Provider) extractOriginalDNSNameFromTXTRecord(txtDNSName string) string {
-	// Find the first hyphen which separates the record type prefix from the DNS name
-	if idx := strings.Index(txtDNSName, "-"); idx > 0 {
-		return txtDNSName[idx+1:]
-	}
-	return txtDNSName
 }
 
 // GetDomainFilter returns the domain filter for this provider.
