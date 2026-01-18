@@ -36,6 +36,7 @@ var _ = BeforeEach(func(ctx SpecContext) {
 			Client:       mocks.Client,
 			Log:          fixtures.NewTestLogger().Sugar(),
 			DomainFilter: provider.NewDomainFilter(provider.DomainFilterConfig{}),
+			Cache:        make(map[string]string),
 		},
 	})
 })
