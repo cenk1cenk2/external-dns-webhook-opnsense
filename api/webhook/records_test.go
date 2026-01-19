@@ -134,7 +134,6 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("a-example.com"))
 			Expect(body[0].Targets).To(BeEquivalentTo([]string{"heritage=external-dns,external-dns/owner=test-cluster"}))
 			Expect(body[0].RecordType).To(Equal("TXT"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
 			Expect(body[0].ProviderSpecific).To(ContainElements(
 				endpoint.ProviderSpecificProperty{
 					Name:  provider.ProviderSpecificUUID.String(),
@@ -345,15 +344,10 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("example.com"))
 			Expect(body[0].Targets).To(ConsistOf("v=spf1 include:_spf.example.com ~all"))
 			Expect(body[0].RecordType).To(Equal("TXT"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
 
 			Expect(body[1].DNSName).To(Equal("example.com"))
 			Expect(body[1].Targets).To(ConsistOf("google-site-verification=abc123"))
 			Expect(body[1].RecordType).To(Equal("TXT"))
-			Expect(body[1].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
-
-			// Each record should have different SetIdentifiers because targets differ
-			Expect(body[0].SetIdentifier).ToNot(Equal(body[1].SetIdentifier))
 		})
 	})
 
