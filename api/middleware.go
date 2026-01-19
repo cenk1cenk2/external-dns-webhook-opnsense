@@ -9,7 +9,6 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
-	"go.uber.org/zap"
 )
 
 func (a *Api) SetupMiddleware() {
@@ -17,7 +16,7 @@ func (a *Api) SetupMiddleware() {
 	e.Validator = a.Validator
 
 	e.OnAddRoute = func(route echo.Route) error {
-		a.log.Debugf("Registered route: %s %s -> %s", route.Method, route.Path, route.Name)
+		a.log.Debugf("Registered route: %s %s", route.Method, route.Path)
 
 		return nil
 	}
@@ -44,22 +43,11 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 				}, true)
 			},
 			LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
+				logger := a.Logger.WithEchoContext(c)
 				if v.Error != nil {
-					a.Logger.Error(v.Error.Error(),
-						zap.String("uri", v.URI),
-						zap.Int("status", v.Status),
-						zap.String("method", v.Method),
-						zap.Duration("latency", v.Latency),
-						zap.String("remote_ip", v.RemoteIP),
-					)
+					logger.Error(v.Error.Error())
 				} else {
-					a.Logger.Info("request",
-						zap.String("uri", v.URI),
-						zap.Int("status", v.Status),
-						zap.String("method", v.Method),
-						zap.Duration("latency", v.Latency),
-						zap.String("remote_ip", v.RemoteIP),
-					)
+					logger.Info("request")
 				}
 
 				return nil

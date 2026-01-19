@@ -14,7 +14,7 @@ func (a *Api) SetupMiddleware() {
 	e.Validator = a.Validator
 
 	e.OnAddRoute = func(route echo.Route) error {
-		a.log.Debugf("Registered route: %s %s -> %s", route.Method, route.Path, route.Name)
+		a.log.Debugf("Registered route: %s %s", route.Method, route.Path)
 
 		return nil
 	}
