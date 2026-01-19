@@ -131,7 +131,7 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
 
 	for _, ep := range endpoints {
-		p.Log.Debugf("AdjustEndpoints processing: %s (%s), targets: %v, existing SetIdentifier: %s", ep.DNSName, ep.RecordType, ep.Targets, ep.SetIdentifier)
+		p.Log.Debugf("AdjustEndpoints processing: %+v", ep)
 
 		// Keep endpoints that already have SetIdentifiers
 		if ep.SetIdentifier != "" {
