@@ -88,6 +88,10 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 }
 
 func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
+	if ep == nil {
+		return nil, fmt.Errorf("endpoint is nil")
+	}
+
 	if len(ep.Targets) == 0 {
 		return nil, fmt.Errorf("no targets found for endpoint: %s", ep.DNSName)
 	} else if len(ep.Targets) > 1 {
@@ -103,6 +107,10 @@ func NewDnsRecordFromEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
 }
 
 func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error) {
+	if ep == nil {
+		return nil, fmt.Errorf("endpoint is nil")
+	}
+
 	id, exists := ep.GetProviderSpecificProperty(ProviderSpecificUUID.String())
 	if !exists {
 		return nil, fmt.Errorf("provider specific id not found attached to the endpoint")

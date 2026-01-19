@@ -405,11 +405,36 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Delete: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster").
+								WithSetIdentifier("e9ab3aba191cedd6e2c945ed0e976dbe72d0ca2676d1ac4a7e7907137abd4ee5").
 								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
 						},
 					})),
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+				// Mock the search call for registry TXT record matching
+				mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(&unbound.SearchHostOverrideResponse{
+					Rows: []unbound.SearchHostOverrideItem{
+						{
+							Id:      "id-txt1",
+							Type:    endpoint.RecordTypeTXT,
+							Domain:  "aaaa-example.com",
+							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
+						},
+						{
+							Id:      "id-txt2",
+							Type:    endpoint.RecordTypeTXT,
+							Domain:  "a-example.com",
+							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
+						},
+						{
+							Id:      "id-txt",
+							Type:    endpoint.RecordTypeTXT,
+							Domain:  "a-example.com",
+							TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
+						},
+					},
+				}, nil).Once()
 
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
 

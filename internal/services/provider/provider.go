@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -211,23 +212,40 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			p.Log.Debugf("Processing TXT record: %s, TxtData: %s", record.GetFQDN(), record.TxtData)
 			// HACK: if this is a registry TXT record, we need to extract the correct UUID from the TXT data
 			// because externall-dns will have the uuid overwritten with the corresponding records value
-			if labels, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
-				p.Log.Debugf("Successfully parsed labels from TXT data: %+v", labels)
-				ep.Labels = labels
+			if _, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
+				p.Log.Debugf("This is a registry record so matching it manually: %+v", ep)
 
-				if id, exists := labels["uuid"]; exists {
-					p.Log.Debugf("Found original uuid in TXT labels: %s", id)
-
-					record.Id = id
-
-					// now we delete using the correct id
-					if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
-						return fmt.Errorf("failed to delete host override %s with correct UUID %s: %w", ep.DNSName, id, err)
-					}
-
-				} else {
-					return fmt.Errorf("uuid label not found in TXT data for record %s", ep.DNSName)
+				all, err := p.Records(ctx)
+				if err != nil {
+					return fmt.Errorf("failed to fetch all records for matching registry TXT record: %w", err)
 				}
+
+				var e *endpoint.Endpoint
+				for _, current := range all {
+					if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier &&
+						reflect.DeepEqual(current.Targets, ep.Targets) {
+						e = current
+						break
+					}
+				}
+
+				if e == nil {
+					return fmt.Errorf("failed to find matching registry TXT record for %s with SetIdentifier %s", ep.DNSName, ep.SetIdentifier)
+				}
+
+				r, err := NewDnsRecordFromExistingEndpoint(e)
+				if err != nil {
+					return fmt.Errorf("failed to create record from endpoint %s during registry TXT matching: %w", ep.DNSName, err)
+				}
+
+				p.Log.Debugf("Found matching registry TXT record to delete: %+v", r)
+
+				if err := p.Client.UnboundDeleteHostOverride(ctx, r.Id); err != nil {
+					return fmt.Errorf("failed to delete registry TXT host override %s with UUID %s: %w", ep.DNSName, r.Id, err)
+				}
+
+				// Update record with the correct UUID for logging
+				record = r
 			} else {
 				if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
 					return fmt.Errorf("failed to delete host override %s with UUID %s: %w", ep.DNSName, record.Id, err)
@@ -293,21 +311,6 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 					return fmt.Errorf("failed to create host override %s: %w", ep.DNSName, err)
 				}
 				p.Log.Infof("Created host override: %s (%s) -> %s with UUID %s, SetIdentifier: %s", ep.DNSName, ep.RecordType, record.GetTarget(), uuid, ep.SetIdentifier)
-
-				// For TXT registry records, inject the UUID into the TXT data
-				if ep.RecordType == endpoint.RecordTypeTXT {
-					if labels, err := endpoint.NewLabelsFromStringPlain(record.TxtData); err == nil {
-						labels["uuid"] = uuid
-
-						p.Log.Debugf("Updating TXT record %s with UUID label: %s", ep.DNSName, uuid)
-						record.TxtData = labels.SerializePlain(true)
-						record.Id = uuid
-
-						if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
-							return fmt.Errorf("Failed to update TXT record with UUID label: %v", err)
-						}
-					}
-				}
 			}
 
 		default:
