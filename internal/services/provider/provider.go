@@ -154,23 +154,22 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 		p.Log.Debugf("Split endpoint %s into %d record(s)", ep.DNSName, len(records))
 
 		for _, record := range records {
-			setID := record.GenerateSetIdentifier()
+			setIdentifier := record.GenerateSetIdentifier()
 
 			e := &endpoint.Endpoint{
 				DNSName:          ep.DNSName,
 				Targets:          record.GetTarget(),
 				RecordType:       ep.RecordType,
-				SetIdentifier:    setID,
+				SetIdentifier:    setIdentifier,
 				RecordTTL:        ep.RecordTTL,
 				Labels:           ep.Labels,
 				ProviderSpecific: ep.ProviderSpecific,
 			}
 
 			if ep.RecordType != endpoint.RecordTypeTXT {
-				e.WithLabel("set-identifier", setID)
-				p.Log.Debugf("Added set-identifier label to %s record: %s -> %v (SetIdentifier: %s)", ep.RecordType, ep.DNSName, record.GetTarget(), setID)
-			} else {
-				p.Log.Debugf("Skipping set-identifier label for TXT record: %s -> %v (SetIdentifier: %s)", ep.DNSName, record.GetTarget(), setID)
+				// add the set identifier as a label as well for registry records to have the set identifier info available from somewhere to fetch
+				e.WithLabel("set-identifier", setIdentifier)
+				p.Log.Debugf("Added label to %s record: %s -> %v (SetIdentifier: %s)", ep.RecordType, ep.DNSName, record.GetTarget(), setIdentifier)
 			}
 
 			adjusted = append(adjusted, e)
@@ -202,7 +201,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			}
 
 			p.Log.Infof(
-				"Deleted host override: %s (%s) %s, SetIdentifier: %s",
+				"Deleted host override: %s (%s) with id %s, SetIdentifier: %s",
 				ep.DNSName,
 				ep.RecordType,
 				record.Id,
@@ -252,8 +251,8 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 				}
 			}
 
-			p.Log.Debugf(
-				"Deleted host override: %s (%s) with UUID %s, SetIdentifier: %s",
+			p.Log.Infof(
+				"Deleted host override: %s (%s) with id %s, SetIdentifier: %s",
 				ep.DNSName,
 				ep.RecordType,
 				record.Id,
@@ -305,12 +304,12 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			}
 
 			for _, record := range records {
-				p.Log.Debugf("Creating host override: %s (%s) -> %s, SetIdentifier: %s", ep.DNSName, ep.RecordType, record.GetTarget(), ep.SetIdentifier)
+				p.Log.Debugf("Creating host override: %s (%s) -> %+v", ep.DNSName, ep.RecordType, record.GetTarget())
 				uuid, err := p.Client.UnboundCreateHostOverride(ctx, record.IntoHostOverride())
 				if err != nil {
 					return fmt.Errorf("failed to create host override %s: %w", ep.DNSName, err)
 				}
-				p.Log.Infof("Created host override: %s (%s) -> %s with UUID %s, SetIdentifier: %s", ep.DNSName, ep.RecordType, record.GetTarget(), uuid, ep.SetIdentifier)
+				p.Log.Infof("Created host override: %s (%s) -> %+v, with id %s", ep.DNSName, ep.RecordType, record.GetTarget(), uuid)
 			}
 
 		default:
