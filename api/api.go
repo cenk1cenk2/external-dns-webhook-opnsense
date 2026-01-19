@@ -55,29 +55,29 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 }
 
 func (a *Api) Start(address string) chan error {
-	errChan := make(chan error)
-	listenerReady := make(chan struct{})
+	errCh := make(chan error)
+	isListenerReady := make(chan struct{})
 
 	go func() {
 		listener, err := net.Listen("tcp", address)
 		if err != nil {
-			errChan <- err
+			errCh <- err
 
 			return
 		}
 
 		a.listener = listener
 		a.server.Handler = a.Echo
-		close(listenerReady)
+		close(isListenerReady)
 
 		a.log.Infof("Starting server at address: %s", listener.Addr().String())
 
-		errChan <- a.server.Serve(listener)
+		errCh <- a.server.Serve(listener)
 	}()
 
-	<-listenerReady
+	<-isListenerReady
 
-	return errChan
+	return errCh
 }
 
 func (a *Api) IsReady() chan bool {
@@ -99,7 +99,7 @@ func (a *Api) IsReady() chan bool {
 }
 
 func (a *Api) GetListener() chan net.Listener {
-	listenerChan := make(chan net.Listener, 1)
+	listener := make(chan net.Listener, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -115,9 +115,9 @@ func (a *Api) GetListener() chan net.Listener {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	listenerChan <- a.listener
+	listener <- a.listener
 
-	return listenerChan
+	return listener
 }
 
 func (a *Api) Shutdown() error {
