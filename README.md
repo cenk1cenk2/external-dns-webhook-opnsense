@@ -60,6 +60,7 @@ provider:
     readinessProbe:
       httpGet:
         path: /readyz
+      initialDelaySeconds: 3
       periodSeconds: 300
     env:
       - name: LOG_LEVEL
