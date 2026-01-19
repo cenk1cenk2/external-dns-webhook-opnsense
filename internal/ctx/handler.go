@@ -22,7 +22,7 @@ func Respond(c *echo.Context, h HandlerFunc, with ...interface{}) error {
 	err := Run(c, h, with...)
 
 	// Check if response was already committed (e.g., by panic recovery middleware)
-	if echoResp, unwrapErr := echo.UnwrapResponse(c.Response()); unwrapErr == nil && echoResp.Committed {
+	if res, unwrapped := echo.UnwrapResponse(c.Response()); unwrapped == nil && res.Committed {
 		// Response already sent, don't call error handler
 		return err
 	}
