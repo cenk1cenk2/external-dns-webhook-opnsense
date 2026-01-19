@@ -7,7 +7,6 @@ require (
 	github.com/creasty/defaults v1.8.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/google/uuid v1.6.0
-	github.com/karagenc/zap4echo v0.1.1
 	github.com/labstack/echo/v4 v4.15.0
 	github.com/labstack/echo/v5 v5.0.0
 	github.com/onsi/ginkgo/v2 v2.27.3
