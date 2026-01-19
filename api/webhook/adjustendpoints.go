@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 

@@ -3,7 +3,7 @@ package services
 import (
 	"os"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -95,7 +95,7 @@ func NewLogger(conf *LoggerConfig) (*Logger, error) {
 	return logger, nil
 }
 
-func (l *Logger) WithEchoContext(c echo.Context) ZapSugaredLogger {
+func (l *Logger) WithEchoContext(c *echo.Context) ZapSugaredLogger {
 	req := c.Request()
 	res := c.Response()
 

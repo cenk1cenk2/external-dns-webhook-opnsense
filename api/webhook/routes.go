@@ -2,7 +2,7 @@ package webhook
 
 import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func (h *Handler) RegisterRoutes(r *echo.Group) {

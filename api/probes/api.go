@@ -4,18 +4,21 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Api struct {
-	Config ApiConfig
-	Echo   *echo.Echo
-	log    services.ZapSugaredLogger
+	Config   ApiConfig
+	Echo     *echo.Echo
+	log      services.ZapSugaredLogger
+	listener net.Listener
+	server   *http.Server
 
 	*ApiSvc
 }
@@ -34,14 +37,13 @@ type ApiSvc struct {
 
 func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
 
 	a := &Api{
 		Config: conf,
 		Echo:   e,
 		ApiSvc: svc,
 		log:    svc.Logger.WithCaller(),
+		server: &http.Server{},
 	}
 
 	a.SetupMiddleware()
@@ -51,15 +53,29 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 }
 
 func (a *Api) Start(address string) chan error {
-	err := make(chan error)
+	errChan := make(chan error)
+	listenerReady := make(chan struct{})
 
 	go func() {
-		err <- a.Echo.Start(address)
+		listener, err := net.Listen("tcp", address)
+		if err != nil {
+			errChan <- err
+
+			return
+		}
+
+		a.listener = listener
+		a.server.Handler = a.Echo
+		close(listenerReady)
+
+		a.log.Infof("Starting health server at address: %s", listener.Addr().String())
+
+		errChan <- a.server.Serve(listener)
 	}()
 
-	a.log.Infof("Starting health server at address: %s", (<-a.GetListener()).Addr().String())
+	<-listenerReady
 
-	return err
+	return errChan
 }
 
 func (a *Api) IsReady() chan bool {
@@ -75,7 +91,7 @@ func (a *Api) IsReady() chan bool {
 }
 
 func (a *Api) GetListener() chan net.Listener {
-	listener := make(chan net.Listener, 1)
+	listenerChan := make(chan net.Listener, 1)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
@@ -87,18 +103,18 @@ func (a *Api) GetListener() chan net.Listener {
 		}
 	}()
 
-	for a.Echo.Listener == nil {
-		time.Sleep(0)
+	for a.listener == nil {
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	listener <- a.Echo.Listener
+	listenerChan <- a.listener
 
-	return listener
+	return listenerChan
 }
 
 func (a *Api) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	return a.Echo.Shutdown(ctx)
+	return a.server.Shutdown(ctx)
 }
