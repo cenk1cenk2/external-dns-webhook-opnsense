@@ -187,7 +187,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	p.Log.Debugf("ApplyChanges called with %d creates, %d updates, %d deletes", len(changes.Create), len(changes.UpdateNew), len(changes.Delete))
 
 	for _, ep := range changes.Delete {
-		p.Log.Debugf("Delete request for: %s (%s), SetIdentifier: %s, Targets: %v, Labels: %+v", ep.DNSName, ep.RecordType, ep.SetIdentifier, ep.Targets, ep.Labels)
+		p.Log.Debugf("Delete request for: %+v", ep)
 
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
@@ -209,6 +209,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	// UpdateOld and UpdateNew are parallel arrays with matching indices
 	for i, n := range changes.UpdateNew {
 		o := changes.UpdateOld[i]
+		p.Log.Debugf("Update request for: from %+v to %+v", o, n)
 
 		switch n.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
@@ -235,7 +236,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	}
 
 	for _, ep := range changes.Create {
-		p.Log.Debugf("Create request for: %s (%s), SetIdentifier: %s, Targets: %v, Labels: %+v", ep.DNSName, ep.RecordType, ep.SetIdentifier, ep.Targets, ep.Labels)
+		p.Log.Debugf("Create request for: %+v", ep)
 
 		switch ep.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
