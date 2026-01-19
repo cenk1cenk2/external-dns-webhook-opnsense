@@ -72,11 +72,12 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
-		// Try to get SetIdentifier from labels (TXT registry stores it with "external-dns/" prefix)
-		if setIdentifier, exists := ep.Labels["external-dns/set-identifier"]; exists {
-			ep.SetIdentifier = setIdentifier
-		} else {
-			ep.SetIdentifier = record.GenerateSetIdentifier()
+		if record.Type != endpoint.RecordTypeTXT {
+			if setIdentifier, exists := ep.Labels["external-dns/set-identifier"]; exists {
+				ep.SetIdentifier = setIdentifier
+			} else {
+				ep.SetIdentifier = record.GenerateSetIdentifier()
+			}
 		}
 
 		if record.Description != "" {
