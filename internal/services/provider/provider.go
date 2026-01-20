@@ -84,28 +84,28 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				// This is a TXT registry record, extract labels into endpoint
 				ep.Labels = labels
 				// Extract SetIdentifier from labels if it exists
-				if setID, exists := labels["set-identifier"]; exists {
-					p.Log.Debugf("Found set-identifier in TXT labels: %s", setID)
-					ep.SetIdentifier = setID
+				if setIdentifier, exists := labels["set-identifier"]; exists {
+					p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
+					ep.SetIdentifier = setIdentifier
 				} else {
 					// Not a registry record with SetIdentifier, generate one
 					ep.SetIdentifier = record.GenerateSetIdentifier()
-					p.Log.Debugf("No set-identifier in TXT labels, generated: %s", ep.SetIdentifier)
+					p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
 				}
 			} else {
 				// Not a registry record, generate SetIdentifier normally
 				p.Log.Debugf("Failed to parse TXT data as labels (error: %v), generating SetIdentifier", err)
 				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("Generated SetIdentifier for non-registry TXT: %s", ep.SetIdentifier)
+				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
 			}
 		} else {
 			// For non-TXT records, try to get SetIdentifier from labels
 			if setIdentifier, exists := ep.Labels["external-dns/set-identifier"]; exists {
-				p.Log.Debugf("Found set-identifier in %s record labels: %s", record.Type, setIdentifier)
+				p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
 				ep.SetIdentifier = setIdentifier
 			} else {
 				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("No set-identifier in %s record labels, generated: %s", record.Type, ep.SetIdentifier)
+				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
 			}
 		}
 
