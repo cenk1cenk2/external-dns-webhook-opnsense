@@ -265,31 +265,31 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 	}
 
 	// UpdateOld and UpdateNew are parallel arrays with matching indices
-	for i, n := range changes.UpdateNew {
-		o := changes.UpdateOld[i]
-		p.Log.Debugf("Update request for: from %+v to %+v", o, n)
+	for i, newEp := range changes.UpdateNew {
+		oldEp := changes.UpdateOld[i]
+		p.Log.Debugf("Update request for: from %+v to %+v", oldEp, newEp)
 
-		switch n.RecordType {
+		switch newEp.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			oldRecord, err := NewDnsRecordFromExistingEndpoint(o)
+			oldRecord, err := NewDnsRecordFromExistingEndpoint(oldEp)
 			if err != nil {
-				return fmt.Errorf("failed to create record from existing endpoint %s: %w", o.DNSName, err)
+				return fmt.Errorf("failed to create record from existing endpoint %s: %w", oldEp.DNSName, err)
 			}
 
-			record, err := NewDnsRecordFromEndpoint(n)
+			newRecord, err := NewDnsRecordFromEndpoint(newEp)
 			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", n.DNSName, err)
+				return fmt.Errorf("failed to create record from endpoint %s: %w", newEp.DNSName, err)
 			}
-			record.Id = oldRecord.Id
+			newRecord.Id = oldRecord.Id
 
-			p.Log.Debugf("Updating host override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
-			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
-				return fmt.Errorf("failed to update host override %s: %w", n.DNSName, err)
+			p.Log.Debugf("Updating host override: %s (%s) with id %s", newEp.DNSName, newEp.RecordType, newRecord.Id)
+			if err := p.Client.UnboundUpdateHostOverride(ctx, newRecord.Id, newRecord.IntoHostOverride()); err != nil {
+				return fmt.Errorf("failed to update host override %s: %w", newEp.DNSName, err)
 			}
-			p.Log.Infof("Updated host override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
+			p.Log.Infof("Updated host override: %s (%s) with id %s", newEp.DNSName, newEp.RecordType, newRecord.Id)
 
 		default:
-			p.Log.Warnf("Record type is not supported: %s -> %s", n.RecordType, n.DNSName)
+			p.Log.Warnf("Record type is not supported: %s -> %s", newEp.RecordType, newEp.DNSName)
 		}
 	}
 
