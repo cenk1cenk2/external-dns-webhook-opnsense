@@ -9,6 +9,7 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
+	"go.uber.org/zap"
 )
 
 func (a *Api) SetupMiddleware() {
@@ -45,9 +46,18 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 			LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
 				logger := a.Logger.WithEchoContext(c)
 				if v.Error != nil {
-					logger.Error(v.Error.Error())
+					logger.With(
+						zap.Duration("latency", v.Latency),
+					).Error(
+						v.Error.Error(),
+					)
 				} else {
-					logger.Info("request")
+					logger.With(
+						zap.Duration("latency", v.Latency),
+					).
+						Info(
+							"request",
+						)
 				}
 
 				return nil

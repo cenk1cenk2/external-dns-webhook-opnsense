@@ -3,7 +3,7 @@ package fixtures
 import (
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 func SetRequestContentJson(req *http.Request) *http.Request {
