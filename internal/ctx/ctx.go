@@ -7,13 +7,12 @@ import (
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Context struct {
-	echo.Context
-	Log    services.ZapSugaredLogger
-	binder *echo.DefaultBinder
+	*echo.Context
+	Log services.ZapSugaredLogger
 }
 
 type BindTarget struct {
@@ -23,10 +22,9 @@ type BindTarget struct {
 	Body    interface{}
 }
 
-func NewContext(c echo.Context, with ...interface{}) *Context {
+func NewContext(c *echo.Context, with ...interface{}) *Context {
 	cc := &Context{
 		Context: c,
-		binder:  &echo.DefaultBinder{},
 	}
 
 	if len(with) > 0 {
@@ -65,7 +63,7 @@ func (c *Context) BindTarget(target *BindTarget) error {
 }
 
 func (c *Context) BindPathParams(i interface{}) error {
-	if err := c.binder.BindPathParams(c.Context, i); err != nil {
+	if err := echo.BindPathValues(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind path parameters: %w", err)
 	}
 
@@ -77,7 +75,7 @@ func (c *Context) BindPathParams(i interface{}) error {
 }
 
 func (c *Context) BindQueryParams(i interface{}) error {
-	if err := c.binder.BindQueryParams(c.Context, i); err != nil {
+	if err := echo.BindQueryParams(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind query parameters: %w", err)
 	}
 
@@ -89,7 +87,7 @@ func (c *Context) BindQueryParams(i interface{}) error {
 }
 
 func (c *Context) BindHeaders(i interface{}) error {
-	if err := c.binder.BindHeaders(c.Context, i); err != nil {
+	if err := echo.BindHeaders(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind headers: %w", err)
 	}
 
@@ -101,7 +99,7 @@ func (c *Context) BindHeaders(i interface{}) error {
 }
 
 func (c *Context) BindBody(i interface{}) error {
-	if err := c.binder.BindBody(c.Context, i); err != nil {
+	if err := echo.BindBody(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind body: %w", err)
 	}
 

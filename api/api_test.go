@@ -9,7 +9,7 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -61,7 +61,7 @@ var _ = Describe("API", func() {
 		It("should return a JSON response with the arbitatary error message", func() {
 			c, res := fixtures.CreateEchoContext(a.Echo, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			a.Echo.HTTPErrorHandler(fmt.Errorf("test"), c)
+			a.Echo.HTTPErrorHandler(c, fmt.Errorf("test"))
 
 			Expect(res.Code).To(Equal(http.StatusInternalServerError))
 
@@ -76,7 +76,7 @@ var _ = Describe("API", func() {
 		It("should return a JSON response with the http error message", func() {
 			c, res := fixtures.CreateEchoContext(a.Echo, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			a.Echo.HTTPErrorHandler(echo.NewHTTPError(http.StatusTeapot, fmt.Errorf("test")), c)
+			a.Echo.HTTPErrorHandler(c, echo.NewHTTPError(http.StatusTeapot, "test"))
 
 			Expect(res.Code).To(Equal(http.StatusTeapot))
 

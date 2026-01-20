@@ -4,19 +4,22 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 )
 
 type Api struct {
-	Config ApiConfig
-	Echo   *echo.Echo
-	log    services.ZapSugaredLogger
+	Config   ApiConfig
+	Echo     *echo.Echo
+	log      services.ZapSugaredLogger
+	listener net.Listener
+	server   *http.Server
 
 	*ApiSvc
 }
@@ -36,14 +39,13 @@ type ApiSvc struct {
 
 func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 	e := echo.New()
-	e.HideBanner = true
-	e.HidePort = true
 
 	a := &Api{
 		Config: conf,
 		Echo:   e,
 		ApiSvc: svc,
 		log:    svc.Logger.WithCaller(),
+		server: &http.Server{},
 	}
 
 	a.SetupMiddleware()
@@ -53,15 +55,29 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 }
 
 func (a *Api) Start(address string) chan error {
-	err := make(chan error)
+	errCh := make(chan error)
+	isListenerReady := make(chan struct{})
 
 	go func() {
-		err <- a.Echo.Start(address)
+		listener, err := net.Listen("tcp", address)
+		if err != nil {
+			errCh <- err
+
+			return
+		}
+
+		a.listener = listener
+		a.server.Handler = a.Echo
+		close(isListenerReady)
+
+		a.log.Infof("Starting server at address: %s", listener.Addr().String())
+
+		errCh <- a.server.Serve(listener)
 	}()
 
-	a.log.Infof("Starting server at address: %s", (<-a.GetListener()).Addr().String())
+	<-isListenerReady
 
-	return err
+	return errCh
 }
 
 func (a *Api) IsReady() chan bool {
@@ -95,11 +111,11 @@ func (a *Api) GetListener() chan net.Listener {
 		}
 	}()
 
-	for a.Echo.Listener == nil {
-		time.Sleep(0)
+	for a.listener == nil {
+		time.Sleep(10 * time.Millisecond)
 	}
 
-	listener <- a.Echo.Listener
+	listener <- a.listener
 
 	return listener
 }
@@ -108,5 +124,5 @@ func (a *Api) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	return a.Echo.Shutdown(ctx)
+	return a.server.Shutdown(ctx)
 }

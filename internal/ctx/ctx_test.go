@@ -7,7 +7,7 @@ import (
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -8,7 +8,7 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	externaldnsapi "sigs.k8s.io/external-dns/provider/webhook/api"
 )
 
