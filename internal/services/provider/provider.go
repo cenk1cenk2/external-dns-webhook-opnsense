@@ -271,16 +271,16 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 
 		switch n.RecordType {
 		case endpoint.RecordTypeA, endpoint.RecordTypeAAAA, endpoint.RecordTypeTXT:
-			uuid, exists := o.GetProviderSpecificProperty(ProviderSpecificUUID.String())
-			if !exists {
-				return fmt.Errorf("can not find uuid in old endpoint: %s %s", o.RecordType, o.DNSName)
+			oldRecord, err := NewDnsRecordFromExistingEndpoint(o)
+			if err != nil {
+				return fmt.Errorf("failed to create record from existing endpoint %s: %w", o.DNSName, err)
 			}
 
-			record, err := NewDnsRecordFromExistingEndpoint(n)
+			record, err := NewDnsRecordFromEndpoint(n)
 			if err != nil {
 				return fmt.Errorf("failed to create record from endpoint %s: %w", n.DNSName, err)
 			}
-			record.Id = uuid
+			record.Id = oldRecord.Id
 
 			p.Log.Debugf("Updating host override: %s (%s) with id %s", n.DNSName, n.RecordType, record.Id)
 			if err := p.Client.UnboundUpdateHostOverride(ctx, record.Id, record.IntoHostOverride()); err != nil {
