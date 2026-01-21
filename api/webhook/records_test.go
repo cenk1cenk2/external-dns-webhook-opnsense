@@ -496,21 +496,57 @@ var _ = Describe("records", func() {
 			})
 
 			It("should be able to handle TXT records", func() {
+				setID := "065142b49fc2cfe086f80b9acf7b001c803a26ca063f8361e903aad87f129aca"
 				req := httptest.NewRequest(
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						UpdateOld: []*endpoint.Endpoint{
-							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=updated-cluster").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+							{
+								DNSName:       "a-example.com",
+								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								RecordType:    endpoint.RecordTypeTXT,
+								SetIdentifier: setID,
+								ProviderSpecific: endpoint.ProviderSpecific{
+									{
+										Name:  provider.ProviderSpecificUUID.String(),
+										Value: "id-txt",
+									},
+								},
+							},
 						},
 						UpdateNew: []*endpoint.Endpoint{
-							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=updated-cluster").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+							{
+								DNSName:       "a-example.com",
+								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								RecordType:    endpoint.RecordTypeTXT,
+								SetIdentifier: setID,
+								ProviderSpecific: endpoint.ProviderSpecific{
+									{
+										Name:  provider.ProviderSpecificUUID.String(),
+										Value: "id-txt",
+									},
+								},
+							},
 						},
 					})),
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+				mocks.Client.EXPECT().
+					UnboundSearchHostOverrides(mock.Anything).
+					Return(&unbound.SearchHostOverrideResponse{
+						Rows: []unbound.SearchHostOverrideItem{
+							{
+								Id:      "id-txt",
+								Enabled: "1",
+								Domain:  "a-example.com",
+								Type:    "TXT",
+								TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
+							},
+						},
+					}, nil).
+					Once()
 
 				mocks.Client.EXPECT().
 					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
