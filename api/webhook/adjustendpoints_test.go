@@ -155,31 +155,6 @@ var _ = Describe("adjustendpoints", func() {
 			Expect(txtValues).To(ConsistOf("v=spf1 include:_spf.example.com ~all", "google-site-verification=abc123"))
 		})
 
-		It("should preserve existing SetIdentifier", func() {
-			req := httptest.NewRequest(
-				http.MethodPost,
-				"/",
-				strings.NewReader(fixtures.MustJsonMarshal([]*endpoint.Endpoint{
-					{
-						DNSName:       "app.example.com",
-						RecordType:    endpoint.RecordTypeA,
-						Targets:       []string{"10.0.0.1"},
-						SetIdentifier: "existing-identifier",
-					},
-				})),
-			)
-			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
-			c, res := fixtures.CreateEchoContext(nil, req)
-
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
-			Expect(res.Code).To(Equal(http.StatusOK))
-
-			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
-			Expect(body).To(HaveLen(1))
-			Expect(body[0].SetIdentifier).To(Equal("existing-identifier"))
-			Expect(body[0].Targets).To(ConsistOf("10.0.0.1"))
-		})
-
 		It("should preserve ProviderSpecific properties when splitting", func() {
 			req := httptest.NewRequest(
 				http.MethodPost,
@@ -300,9 +275,9 @@ var _ = Describe("adjustendpoints", func() {
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(body).To(HaveLen(3))
 
-			// First endpoint kept as-is
+			// First endpoint has regenerated SetIdentifier (not preserved)
 			Expect(body[0].DNSName).To(Equal("existing.example.com"))
-			Expect(body[0].SetIdentifier).To(Equal("existing-id"))
+			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
 
 			// Next two are split from second input
 			Expect(body[1].DNSName).To(Equal("new.example.com"))

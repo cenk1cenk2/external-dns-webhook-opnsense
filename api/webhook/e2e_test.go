@@ -165,7 +165,7 @@ var _ = Describe("E2E Flow", func() {
 
 			// Verify Current endpoints have UUIDs
 			for _, ep := range current {
-				id, exists := ep.GetProviderSpecificProperty(provider.ProviderSpecificUUID.String())
+				id, exists := ep.Labels[provider.EndpointLabelUUID.String()]
 				Expect(exists).To(BeTrue(), "Current endpoints should have UUIDs")
 				Expect(id).ToNot(BeEmpty())
 			}
@@ -217,7 +217,7 @@ var _ = Describe("E2E Flow", func() {
 			for _, ep := range current {
 				if ep.Targets[0] == "10.0.0.2" {
 					endpointToDelete = ep
-					uuidToDelete, _ = ep.GetProviderSpecificProperty(provider.ProviderSpecificUUID.String())
+					uuidToDelete = ep.Labels[provider.EndpointLabelUUID.String()]
 					break
 				}
 			}
@@ -305,7 +305,7 @@ var _ = Describe("E2E Flow", func() {
 			// Mock deletes - verify UUIDs are used correctly
 			deletedUUIDs := make(map[string]bool)
 			for _, ep := range current {
-				id, _ := ep.GetProviderSpecificProperty(provider.ProviderSpecificUUID.String())
+				id := ep.Labels[provider.EndpointLabelUUID.String()]
 				deletedUUIDs[id] = true
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, id).Return(nil).Once()
 			}
@@ -491,7 +491,7 @@ var _ = Describe("E2E Flow", func() {
 
 			// Verify all have UUIDs
 			for _, ep := range current {
-				id, exists := ep.GetProviderSpecificProperty(provider.ProviderSpecificUUID.String())
+				id, exists := ep.Labels[provider.EndpointLabelUUID.String()]
 				Expect(exists).To(BeTrue())
 				Expect(id).ToNot(BeEmpty())
 			}

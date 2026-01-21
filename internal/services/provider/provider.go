@@ -68,46 +68,12 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithProviderSpecific(
-				ProviderSpecificUUID.String(),
-				record.Id,
-			)
+			WithLabel(EndpointLabelUUID.String(), record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
-		// For TXT records, try to parse labels from TXT data to extract SetIdentifier
-		if record.Type == endpoint.RecordTypeTXT {
-			p.Log.Debugf("Processing TXT record: %s, TxtData: %s", record.GetFQDN(), record.TxtData)
-			if labels, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
-				p.Log.Debugf("Successfully parsed labels from TXT data: %+v", labels)
-				// This is a TXT registry record, extract labels into endpoint
-				ep.Labels = labels
-				// Extract SetIdentifier from labels if it exists
-				if setIdentifier, exists := labels["set-identifier"]; exists {
-					p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
-					ep.SetIdentifier = setIdentifier
-				} else {
-					// Not a registry record with SetIdentifier, generate one
-					ep.SetIdentifier = record.GenerateSetIdentifier()
-					p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-				}
-			} else {
-				// Not a registry record, generate SetIdentifier normally
-				p.Log.Debugf("Failed to parse TXT data as labels (error: %v), generating SetIdentifier", err)
-				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-			}
-		} else {
-			// For non-TXT records, try to get SetIdentifier from labels
-			if setIdentifier, exists := ep.Labels["set-identifier"]; exists {
-				p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
-				ep.SetIdentifier = setIdentifier
-			} else {
-				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-			}
-		}
+		ep.SetIdentifier = record.GenerateSetIdentifier()
 
 		if record.Description != "" {
 			ep.WithProviderSpecific(
@@ -132,51 +98,38 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 	for _, ep := range endpoints {
 		p.Log.Debugf("AdjustEndpoints processing: %+v", ep)
 
-		// Keep endpoints that already have SetIdentifiers
-		if ep.SetIdentifier != "" {
-			adjusted = append(adjusted, ep)
-			p.Log.Debugf("Keeping endpoint with existing SetIdentifier: %s", ep.SetIdentifier)
-			continue
-		}
-
 		// Skip endpoints with no targets - nothing to create
 		if len(ep.Targets) == 0 {
 			p.Log.Debugf("Skipping endpoint with no targets: %s", ep.DNSName)
 			continue
 		}
 
-		// Process all record types the same way
 		records, err := NewDnsRecordsFromEndpoint(ep)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
 		}
 
-		p.Log.Debugf("Split endpoint %s into %d record(s)", ep.DNSName, len(records))
+		p.Log.Debugf("Normalized endpoint %s into %d record(s)", ep.DNSName, len(records))
 
 		for _, record := range records {
-			setIdentifier := record.GenerateSetIdentifier()
-
 			e := &endpoint.Endpoint{
 				DNSName:          ep.DNSName,
 				Targets:          record.GetTarget(),
 				RecordType:       ep.RecordType,
-				SetIdentifier:    setIdentifier,
+				SetIdentifier:    record.GenerateSetIdentifier(),
 				RecordTTL:        ep.RecordTTL,
 				Labels:           ep.Labels,
 				ProviderSpecific: ep.ProviderSpecific,
 			}
-
-			if ep.RecordType != endpoint.RecordTypeTXT {
-				// add the set identifier as a label as well for registry records to have the set identifier info available from somewhere to fetch
-				e.WithLabel("set-identifier", setIdentifier)
-				p.Log.Debugf("Added label to %s record: %s -> %v (SetIdentifier: %s)", ep.RecordType, ep.DNSName, record.GetTarget(), setIdentifier)
-			}
+			e.WithLabel(EndpointLabelSetIdentifier.String(), e.SetIdentifier)
 
 			adjusted = append(adjusted, e)
+			p.Log.Debugf("Adjusted endpoint: %s -> %v", ep.DNSName, record.GetTarget())
 		}
 	}
 
 	p.Log.Debugf("AdjustEndpoints returning %d endpoint(s)", len(adjusted))
+
 	return adjusted, nil
 }
 

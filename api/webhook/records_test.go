@@ -91,13 +91,8 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("example.com"))
 			Expect(body[0].Targets).To(BeEquivalentTo([]string{"192.168.1.1"}))
 			Expect(body[0].RecordType).To(Equal("A"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
-			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id",
-				},
-			))
+			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id"))
 		})
 
 		It("should be able to fetch and convert TXT records", func() {
@@ -134,12 +129,7 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("a-example.com"))
 			Expect(body[0].Targets).To(BeEquivalentTo([]string{"heritage=external-dns,external-dns/owner=test-cluster"}))
 			Expect(body[0].RecordType).To(Equal("TXT"))
-			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id-txt",
-				},
-			))
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id-txt"))
 		})
 
 		It("should be able to fetch records with descriptions", func() {
@@ -175,12 +165,9 @@ var _ = Describe("records", func() {
 			Expect(body).To(HaveLen(1))
 
 			Expect(body[0].DNSName).To(Equal("api.example.com"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
+			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id-with-desc"))
 			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id-with-desc",
-				},
 				endpoint.ProviderSpecificProperty{
 					Name:  provider.ProviderSpecificDescription.String(),
 					Value: "Production API endpoint",
@@ -381,9 +368,9 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Delete: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 					})),
 				)
@@ -406,7 +393,7 @@ var _ = Describe("records", func() {
 						Delete: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster").
 								WithSetIdentifier("e9ab3aba191cedd6e2c945ed0e976dbe72d0ca2676d1ac4a7e7907137abd4ee5").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-txt"),
 						},
 					})),
 				)
@@ -453,15 +440,15 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						UpdateOld: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 						UpdateNew: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 					})),
 				)
@@ -507,11 +494,8 @@ var _ = Describe("records", func() {
 								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
-								ProviderSpecific: endpoint.ProviderSpecific{
-									{
-										Name:  provider.ProviderSpecificUUID.String(),
-										Value: "id-txt",
-									},
+								Labels: map[string]string{
+									provider.EndpointLabelUUID.String(): "id-txt",
 								},
 							},
 						},
@@ -521,11 +505,8 @@ var _ = Describe("records", func() {
 								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
-								ProviderSpecific: endpoint.ProviderSpecific{
-									{
-										Name:  provider.ProviderSpecificUUID.String(),
-										Value: "id-txt",
-									},
+								Labels: map[string]string{
+									provider.EndpointLabelUUID.String(): "id-txt",
 								},
 							},
 						},
