@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -310,8 +309,8 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 
 		var matched *endpoint.Endpoint
 		for _, current := range all {
-			if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier &&
-				reflect.DeepEqual(current.Targets, ep.Targets) {
+			if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier && current.Labels != nil && ep.Labels != nil &&
+				current.Labels["owner"] == ep.Labels["owner"] && current.Labels["resource"] == ep.Labels["resource"] {
 				matched = current
 				break
 			}
