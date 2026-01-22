@@ -8,11 +8,11 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/labstack/echo/v5 v5.0.0
-	github.com/onsi/ginkgo/v2 v2.27.3
+	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
 	github.com/stretchr/testify v1.11.1
 	github.com/thessem/zap-prettyconsole v0.6.0
-	github.com/urfave/cli/v3 v3.6.1
+	github.com/urfave/cli/v3 v3.6.2
 	go.uber.org/zap v1.27.1
 	golang.org/x/text v0.33.0
 	sigs.k8s.io/external-dns v0.20.0
@@ -104,4 +104,4 @@ require (
 
 tool github.com/onsi/ginkgo/v2/ginkgo
 
-replace github.com/browningluke/opnsense-go => github.com/cenk1cenk2/opnsense-go v0.0.0-20260114212704-5b474b18a052
+replace github.com/browningluke/opnsense-go => github.com/cenk1cenk2/opnsense-go v0.0.0-20251101200740-13f2585a4ff2
