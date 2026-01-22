@@ -385,13 +385,13 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records with UUID in Labels", func() {
+			It("should be able to handle normal TXT records with UUID in Labels", func() {
 				req := httptest.NewRequest(
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Delete: []*endpoint.Endpoint{
-							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster").
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeTXT, "some non-parsable text content").
 								WithSetIdentifier("e9ab3aba191cedd6e2c945ed0e976dbe72d0ca2676d1ac4a7e7907137abd4ee5").
 								WithLabel(provider.EndpointLabelUUID.String(), "id-txt"),
 						},
@@ -399,7 +399,7 @@ var _ = Describe("records", func() {
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				// When UUID exists in Labels, we use it directly without searching
+				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
@@ -459,7 +459,7 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records with UUID in Labels", func() {
+			It("should be able to handle normal TXT records with UUID in Labels", func() {
 				setID := "065142b49fc2cfe086f80b9acf7b001c803a26ca063f8361e903aad87f129aca"
 				req := httptest.NewRequest(
 					http.MethodPost,
@@ -467,8 +467,8 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						UpdateOld: []*endpoint.Endpoint{
 							{
-								DNSName:       "a-example.com",
-								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								DNSName:       "example.com",
+								Targets:       endpoint.Targets{"some non-parsable text content"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
 								Labels: map[string]string{
@@ -478,8 +478,8 @@ var _ = Describe("records", func() {
 						},
 						UpdateNew: []*endpoint.Endpoint{
 							{
-								DNSName:       "a-example.com",
-								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								DNSName:       "example.com",
+								Targets:       endpoint.Targets{"updated non-parsable text content"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
 								Labels: map[string]string{
@@ -491,13 +491,13 @@ var _ = Describe("records", func() {
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				// When UUID exists in Labels, we use it directly without searching
+				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().
 					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
 						Enabled: "1",
-						Domain:  "a-example.com",
+						Domain:  "example.com",
 						Type:    "TXT",
-						TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
+						TxtData: "updated non-parsable text content",
 					}).
 					Return(nil).
 					Once()
