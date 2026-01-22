@@ -321,13 +321,13 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 
 		var record *DnsRecord
 		for _, row := range overrides.Rows {
-			labels, err := endpoint.NewLabelsFromString(row.TxtData, nil)
+			rowLabels, err := endpoint.NewLabelsFromString(row.TxtData, nil)
 			if err != nil {
 				continue
 			}
-			if row.Domain == ep.DNSName && row.Type == ep.RecordType && labels[EndpointLabelSetIdentifier.String()] == ep.SetIdentifier &&
-				labels["owner"] == epLabels["owner"] &&
-				labels["resource"] == epLabels["resource"] {
+			if row.Domain == ep.DNSName && row.Type == ep.RecordType && rowLabels[EndpointLabelSetIdentifier.String()] == ep.SetIdentifier &&
+				rowLabels["owner"] == epLabels["owner"] &&
+				rowLabels["resource"] == epLabels["resource"] {
 				record = NewDnsRecord(row)
 				break
 			}
