@@ -130,6 +130,9 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 		p.Log.Debugf("Normalized endpoint %s into %d record(s)", ep.DNSName, len(records))
 
 		for _, record := range records {
+			if ep.Labels == nil {
+				ep.Labels = make(map[string]string)
+			}
 			ep.Labels[EndpointLabelUUID.String()] = "" // Clear UUID for split endpoints
 
 			e := &endpoint.Endpoint{
