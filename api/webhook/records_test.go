@@ -91,13 +91,8 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("example.com"))
 			Expect(body[0].Targets).To(BeEquivalentTo([]string{"192.168.1.1"}))
 			Expect(body[0].RecordType).To(Equal("A"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
-			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id",
-				},
-			))
+			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id"))
 		})
 
 		It("should be able to fetch and convert TXT records", func() {
@@ -134,12 +129,7 @@ var _ = Describe("records", func() {
 			Expect(body[0].DNSName).To(Equal("a-example.com"))
 			Expect(body[0].Targets).To(BeEquivalentTo([]string{"heritage=external-dns,external-dns/owner=test-cluster"}))
 			Expect(body[0].RecordType).To(Equal("TXT"))
-			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id-txt",
-				},
-			))
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id-txt"))
 		})
 
 		It("should be able to fetch records with descriptions", func() {
@@ -175,12 +165,9 @@ var _ = Describe("records", func() {
 			Expect(body).To(HaveLen(1))
 
 			Expect(body[0].DNSName).To(Equal("api.example.com"))
-			Expect(body[0].SetIdentifier).ToNot(BeEmpty()) // Stable hash based on record data
+			Expect(body[0].SetIdentifier).ToNot(BeEmpty())
+			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id-with-desc"))
 			Expect(body[0].ProviderSpecific).To(ContainElements(
-				endpoint.ProviderSpecificProperty{
-					Name:  provider.ProviderSpecificUUID.String(),
-					Value: "id-with-desc",
-				},
 				endpoint.ProviderSpecificProperty{
 					Name:  provider.ProviderSpecificDescription.String(),
 					Value: "Production API endpoint",
@@ -381,9 +368,9 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Delete: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 					})),
 				)
@@ -398,44 +385,21 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records", func() {
+			It("should be able to handle normal TXT records with UUID in Labels", func() {
 				req := httptest.NewRequest(
 					http.MethodPost,
 					"/",
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Delete: []*endpoint.Endpoint{
-							endpoint.NewEndpoint("a-example.com", endpoint.RecordTypeTXT, "heritage=external-dns,external-dns/owner=test-cluster").
+							endpoint.NewEndpoint("example.com", endpoint.RecordTypeTXT, "some non-parsable text content").
 								WithSetIdentifier("e9ab3aba191cedd6e2c945ed0e976dbe72d0ca2676d1ac4a7e7907137abd4ee5").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-txt"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-txt"),
 						},
 					})),
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				// Mock the search call for registry TXT record matching
-				mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(&unbound.SearchHostOverrideResponse{
-					Rows: []unbound.SearchHostOverrideItem{
-						{
-							Id:      "id-txt1",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "aaaa-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
-						},
-						{
-							Id:      "id-txt2",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "a-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
-						},
-						{
-							Id:      "id-txt",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "a-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
-						},
-					},
-				}, nil).Once()
-
+				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
@@ -453,15 +417,15 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						UpdateOld: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 						UpdateNew: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-A"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
 							endpoint.NewEndpoint("example.com", endpoint.RecordTypeAAAA, "fd00::").
-								WithProviderSpecific(provider.ProviderSpecificUUID.String(), "id-AAAA"),
+								WithLabel(provider.EndpointLabelUUID.String(), "id-AAAA"),
 						},
 					})),
 				)
@@ -495,7 +459,7 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records", func() {
+			It("should be able to handle normal TXT records with UUID in Labels", func() {
 				setID := "065142b49fc2cfe086f80b9acf7b001c803a26ca063f8361e903aad87f129aca"
 				req := httptest.NewRequest(
 					http.MethodPost,
@@ -503,29 +467,23 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						UpdateOld: []*endpoint.Endpoint{
 							{
-								DNSName:       "a-example.com",
-								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								DNSName:       "example.com",
+								Targets:       endpoint.Targets{"some non-parsable text content"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
-								ProviderSpecific: endpoint.ProviderSpecific{
-									{
-										Name:  provider.ProviderSpecificUUID.String(),
-										Value: "id-txt",
-									},
+								Labels: map[string]string{
+									provider.EndpointLabelUUID.String(): "id-txt",
 								},
 							},
 						},
 						UpdateNew: []*endpoint.Endpoint{
 							{
-								DNSName:       "a-example.com",
-								Targets:       endpoint.Targets{"heritage=external-dns,external-dns/owner=updated-cluster"},
+								DNSName:       "example.com",
+								Targets:       endpoint.Targets{"updated non-parsable text content"},
 								RecordType:    endpoint.RecordTypeTXT,
 								SetIdentifier: setID,
-								ProviderSpecific: endpoint.ProviderSpecific{
-									{
-										Name:  provider.ProviderSpecificUUID.String(),
-										Value: "id-txt",
-									},
+								Labels: map[string]string{
+									provider.EndpointLabelUUID.String(): "id-txt",
 								},
 							},
 						},
@@ -533,27 +491,13 @@ var _ = Describe("records", func() {
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				mocks.Client.EXPECT().
-					UnboundSearchHostOverrides(mock.Anything).
-					Return(&unbound.SearchHostOverrideResponse{
-						Rows: []unbound.SearchHostOverrideItem{
-							{
-								Id:      "id-txt",
-								Enabled: "1",
-								Domain:  "a-example.com",
-								Type:    "TXT",
-								TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
-							},
-						},
-					}, nil).
-					Once()
-
+				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().
 					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
 						Enabled: "1",
-						Domain:  "a-example.com",
+						Domain:  "example.com",
 						Type:    "TXT",
-						TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
+						TxtData: "updated non-parsable text content",
 					}).
 					Return(nil).
 					Once()

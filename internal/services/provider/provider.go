@@ -3,7 +3,6 @@ package provider
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
@@ -68,46 +67,12 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 				record.Type,
 				record.GetTarget()...,
 			).
-			WithProviderSpecific(
-				ProviderSpecificUUID.String(),
-				record.Id,
-			)
+			WithLabel(EndpointLabelUUID.String(), record.Id)
 		if ep == nil {
 			return nil, fmt.Errorf("failed to create endpoint for record %s", record.GetFQDN())
 		}
 
-		// For TXT records, try to parse labels from TXT data to extract SetIdentifier
-		if record.Type == endpoint.RecordTypeTXT {
-			p.Log.Debugf("Processing TXT record: %s, TxtData: %s", record.GetFQDN(), record.TxtData)
-			if labels, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
-				p.Log.Debugf("Successfully parsed labels from TXT data: %+v", labels)
-				// This is a TXT registry record, extract labels into endpoint
-				ep.Labels = labels
-				// Extract SetIdentifier from labels if it exists
-				if setIdentifier, exists := labels["set-identifier"]; exists {
-					p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
-					ep.SetIdentifier = setIdentifier
-				} else {
-					// Not a registry record with SetIdentifier, generate one
-					ep.SetIdentifier = record.GenerateSetIdentifier()
-					p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-				}
-			} else {
-				// Not a registry record, generate SetIdentifier normally
-				p.Log.Debugf("Failed to parse TXT data as labels (error: %v), generating SetIdentifier", err)
-				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-			}
-		} else {
-			// For non-TXT records, try to get SetIdentifier from labels
-			if setIdentifier, exists := ep.Labels["set-identifier"]; exists {
-				p.Log.Debugf("Found set-identifier in labels: %s -> %+v", setIdentifier, ep)
-				ep.SetIdentifier = setIdentifier
-			} else {
-				ep.SetIdentifier = record.GenerateSetIdentifier()
-				p.Log.Debugf("Generated set identifier: %s -> %+v", ep.SetIdentifier, ep)
-			}
-		}
+		ep.SetIdentifier = record.GenerateSetIdentifier()
 
 		if record.Description != "" {
 			ep.WithProviderSpecific(
@@ -132,51 +97,64 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 	for _, ep := range endpoints {
 		p.Log.Debugf("AdjustEndpoints processing: %+v", ep)
 
-		// Keep endpoints that already have SetIdentifiers
-		if ep.SetIdentifier != "" {
-			adjusted = append(adjusted, ep)
-			p.Log.Debugf("Keeping endpoint with existing SetIdentifier: %s", ep.SetIdentifier)
-			continue
-		}
-
 		// Skip endpoints with no targets - nothing to create
 		if len(ep.Targets) == 0 {
 			p.Log.Debugf("Skipping endpoint with no targets: %s", ep.DNSName)
 			continue
 		}
 
-		// Process all record types the same way
+		// If endpoint has only one target, no splitting needed - just ensure SetIdentifier is set
+		if len(ep.Targets) == 1 {
+			p.Log.Debugf("Endpoint has single target, no splitting needed: %s", ep.DNSName)
+
+			// Create a record to generate SetIdentifier
+			records, err := NewDnsRecordsFromEndpoint(ep)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create record from endpoint %s: %v", ep.DNSName, err)
+			}
+
+			ep.SetIdentifier = records[0].GenerateSetIdentifier()
+			ep.WithLabel(EndpointLabelSetIdentifier.String(), ep.SetIdentifier)
+
+			adjusted = append(adjusted, ep)
+			continue
+		}
+
+		// Multiple targets - need to split into separate endpoints
 		records, err := NewDnsRecordsFromEndpoint(ep)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create records from endpoint %s: %v", ep.DNSName, err)
 		}
 
-		p.Log.Debugf("Split endpoint %s into %d record(s)", ep.DNSName, len(records))
+		p.Log.Debugf("Normalized endpoint %s into %d record(s)", ep.DNSName, len(records))
 
 		for _, record := range records {
-			setIdentifier := record.GenerateSetIdentifier()
+			if ep.Labels == nil {
+				ep.Labels = make(map[string]string)
+			}
+			ep.Labels[EndpointLabelUUID.String()] = "" // Clear UUID for split endpoints
 
 			e := &endpoint.Endpoint{
 				DNSName:          ep.DNSName,
 				Targets:          record.GetTarget(),
 				RecordType:       ep.RecordType,
-				SetIdentifier:    setIdentifier,
+				SetIdentifier:    record.GenerateSetIdentifier(),
 				RecordTTL:        ep.RecordTTL,
 				Labels:           ep.Labels,
 				ProviderSpecific: ep.ProviderSpecific,
 			}
 
-			if ep.RecordType != endpoint.RecordTypeTXT {
-				// add the set identifier as a label as well for registry records to have the set identifier info available from somewhere to fetch
-				e.WithLabel("set-identifier", setIdentifier)
-				p.Log.Debugf("Added label to %s record: %s -> %v (SetIdentifier: %s)", ep.RecordType, ep.DNSName, record.GetTarget(), setIdentifier)
-			}
+			e.WithLabel(EndpointLabelSetIdentifier.String(), e.SetIdentifier)
+			// Note: UUID is intentionally not set here for multi-target splits
+			// Each split endpoint will need to be matched against Records() to find its UUID
 
 			adjusted = append(adjusted, e)
+			p.Log.Debugf("Adjusted endpoint: %s -> %v", ep.DNSName, record.GetTarget())
 		}
 	}
 
 	p.Log.Debugf("AdjustEndpoints returning %d endpoint(s)", len(adjusted))
+
 	return adjusted, nil
 }
 
@@ -206,52 +184,17 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 				ep.SetIdentifier,
 			)
 		case endpoint.RecordTypeTXT:
-			record, err := NewDnsRecordFromExistingEndpoint(ep)
+			p.Log.Debugf("Processing TXT record delete: %s", ep.DNSName)
+
+			record, err := p.handleTxtRecordMatching(ctx, ep)
 			if err != nil {
-				return fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+				return fmt.Errorf("failed to match TXT record for delete: %w", err)
 			}
 
-			p.Log.Debugf("Processing TXT record: %s, TxtData: %s", record.GetFQDN(), record.TxtData)
-			// HACK: if this is a registry TXT record, we need to extract the correct UUID from the TXT data
-			// because externall-dns will have the uuid overwritten with the corresponding records value
-			if _, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
-				p.Log.Debugf("This is a registry record so matching it manually: %+v", ep)
+			p.Log.Debugf("Found matching TXT record to delete: %s with UUID %s", record.GetFQDN(), record.Id)
 
-				all, err := p.Records(ctx)
-				if err != nil {
-					return fmt.Errorf("failed to fetch all records for matching registry TXT record: %w", err)
-				}
-
-				var e *endpoint.Endpoint
-				for _, current := range all {
-					if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier &&
-						reflect.DeepEqual(current.Targets, ep.Targets) {
-						e = current
-						break
-					}
-				}
-
-				if e == nil {
-					return fmt.Errorf("failed to find matching registry TXT record for %s with SetIdentifier %s", ep.DNSName, ep.SetIdentifier)
-				}
-
-				r, err := NewDnsRecordFromExistingEndpoint(e)
-				if err != nil {
-					return fmt.Errorf("failed to create record from endpoint %s during registry TXT matching: %w", ep.DNSName, err)
-				}
-
-				p.Log.Debugf("Found matching registry TXT record to delete: %+v", r)
-
-				if err := p.Client.UnboundDeleteHostOverride(ctx, r.Id); err != nil {
-					return fmt.Errorf("failed to delete registry TXT host override %s with UUID %s: %w", ep.DNSName, r.Id, err)
-				}
-
-				// Update record with the correct UUID for logging
-				record = r
-			} else {
-				if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
-					return fmt.Errorf("failed to delete host override %s with UUID %s: %w", ep.DNSName, record.Id, err)
-				}
+			if err := p.Client.UnboundDeleteHostOverride(ctx, record.Id); err != nil {
+				return fmt.Errorf("failed to delete TXT host override %s with UUID %s: %w", ep.DNSName, record.Id, err)
 			}
 
 			p.Log.Infof(
@@ -292,9 +235,11 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 			p.Log.Infof("Updated host override: %s (%s) with id %s", newEp.DNSName, newEp.RecordType, newRecord.Id)
 
 		case endpoint.RecordTypeTXT:
-			oldRecord, err := NewDnsRecordFromExistingEndpoint(oldEp)
+			p.Log.Debugf("Processing TXT record update: %s", oldEp.DNSName)
+
+			oldRecord, err := p.handleTxtRecordMatching(ctx, oldEp)
 			if err != nil {
-				return fmt.Errorf("failed to create record from existing endpoint %s: %w", oldEp.DNSName, err)
+				return fmt.Errorf("failed to match TXT record for update: %w", err)
 			}
 
 			newRecord, err := NewDnsRecordFromEndpoint(newEp)
@@ -302,41 +247,7 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 				return fmt.Errorf("failed to create record from endpoint %s: %w", newEp.DNSName, err)
 			}
 
-			p.Log.Debugf("Processing TXT record update: %s, TxtData: %s", oldRecord.GetFQDN(), oldRecord.TxtData)
-			// HACK: if this is a registry TXT record, we need to extract the correct UUID from the TXT data
-			// because external-dns will have the uuid overwritten with the corresponding records value
-			if _, err := endpoint.NewLabelsFromString(oldRecord.TxtData, nil); err == nil {
-				p.Log.Debugf("This is a registry record so matching it manually: %+v", oldEp)
-
-				all, err := p.Records(ctx)
-				if err != nil {
-					return fmt.Errorf("failed to fetch all records for matching registry TXT record: %w", err)
-				}
-
-				var e *endpoint.Endpoint
-				for _, current := range all {
-					if current.DNSName == oldEp.DNSName && current.RecordType == oldEp.RecordType && current.SetIdentifier == oldEp.SetIdentifier &&
-						reflect.DeepEqual(current.Targets, oldEp.Targets) {
-						e = current
-						break
-					}
-				}
-
-				if e == nil {
-					return fmt.Errorf("failed to find matching registry TXT record for %s with SetIdentifier %s", oldEp.DNSName, oldEp.SetIdentifier)
-				}
-
-				r, err := NewDnsRecordFromExistingEndpoint(e)
-				if err != nil {
-					return fmt.Errorf("failed to create record from endpoint %s during registry TXT matching: %w", oldEp.DNSName, err)
-				}
-
-				p.Log.Debugf("Found matching registry TXT record to update: %+v", r)
-
-				newRecord.Id = r.Id
-			} else {
-				newRecord.Id = oldRecord.Id
-			}
+			newRecord.Id = oldRecord.Id
 
 			p.Log.Debugf("Updating host override: %s (%s) with id %s", newEp.DNSName, newEp.RecordType, newRecord.Id)
 			if err := p.Client.UnboundUpdateHostOverride(ctx, newRecord.Id, newRecord.IntoHostOverride()); err != nil {
@@ -380,4 +291,50 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 // GetDomainFilter returns the domain filter for this provider.
 func (p *Provider) GetDomainFilter() endpoint.DomainFilterInterface {
 	return p.DomainFilter
+}
+
+// handleTxtRecordMatching handles the logic for finding the correct DnsRecord for a given registry TXT record.
+func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.Endpoint) (*DnsRecord, error) {
+	record, err := NewDnsRecordFromEndpoint(ep)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+	}
+
+	if _, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
+		p.Log.Debugf("Endpoint corresponds to a registry record: %+v", ep)
+		all, err := p.Records(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch all records for matching TXT record: %w", err)
+		}
+
+		var matched *endpoint.Endpoint
+		for _, current := range all {
+			if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier && current.Labels != nil && ep.Labels != nil &&
+				current.Labels["owner"] == ep.Labels["owner"] && current.Labels["resource"] == ep.Labels["resource"] {
+				matched = current
+				break
+			}
+		}
+
+		if matched == nil {
+			return nil, fmt.Errorf("failed to find matching TXT record for %s with SetIdentifier %s", ep.DNSName, ep.SetIdentifier)
+		}
+
+		record, err := NewDnsRecordFromExistingEndpoint(matched)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create record from matched endpoint %s: %w", ep.DNSName, err)
+		}
+
+		return record, nil
+	}
+
+	// Labels not parsable - this is a normal TXT record, use UUID from Labels directly
+	p.Log.Debugf("Endpoint corresponds to a normal TXT record: %+v", ep)
+
+	record, err = NewDnsRecordFromExistingEndpoint(ep)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
+	}
+
+	return record, nil
 }

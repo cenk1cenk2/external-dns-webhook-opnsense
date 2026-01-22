@@ -111,9 +111,9 @@ func NewDnsRecordFromExistingEndpoint(ep *endpoint.Endpoint) (*DnsRecord, error)
 		return nil, fmt.Errorf("endpoint is nil")
 	}
 
-	id, exists := ep.GetProviderSpecificProperty(ProviderSpecificUUID.String())
+	id, exists := ep.Labels[EndpointLabelUUID.String()]
 	if !exists {
-		return nil, fmt.Errorf("provider specific id not found attached to the endpoint")
+		return nil, fmt.Errorf("uuid label not found attached to the endpoint")
 	}
 
 	record, err := NewDnsRecordFromEndpoint(ep)
@@ -151,6 +151,14 @@ func (r *DnsRecord) GetTarget() []string {
 
 // GenerateSetIdentifier creates a stable identifier based on the record's data.
 func (r *DnsRecord) GenerateSetIdentifier() string {
+	if r.Type == endpoint.RecordTypeTXT {
+		if labels, err := endpoint.NewLabelsFromString(r.TxtData, nil); err == nil {
+			if setIdentifier, exists := labels[EndpointLabelSetIdentifier.String()]; exists {
+				return setIdentifier
+			}
+		}
+	}
+
 	data := fmt.Sprintf("%s:%s:%s", r.GetFQDN(), r.Type, strings.Join(r.GetTarget(), ","))
 	hash := sha256.Sum256([]byte(data))
 
