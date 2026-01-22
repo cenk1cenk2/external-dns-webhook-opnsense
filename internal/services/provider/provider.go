@@ -309,7 +309,7 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 		return nil, fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
 	}
 
-	if _, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
+	if epLabels, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
 		p.Log.Debugf("Endpoint corresponds to a registry record: %+v", ep)
 		overrides, err := p.Client.UnboundSearchHostOverrides(ctx, &opnsense.UnboundSearchHostOverrideRequest{
 			SearchPhrase: ep.DNSName,
@@ -325,9 +325,9 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 			if err != nil {
 				continue
 			}
-			if row.Domain == ep.DNSName && row.Type == ep.RecordType && labels[EndpointLabelSetIdentifier.String()] == ep.SetIdentifier && ep.Labels != nil &&
-				labels["owner"] == ep.Labels["owner"] &&
-				labels["resource"] == ep.Labels["resource"] {
+			if row.Domain == ep.DNSName && row.Type == ep.RecordType && labels[EndpointLabelSetIdentifier.String()] == ep.SetIdentifier &&
+				labels["owner"] == epLabels["owner"] &&
+				labels["resource"] == epLabels["resource"] {
 				record = NewDnsRecord(row)
 				break
 			}
@@ -340,7 +340,6 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 		return record, nil
 	}
 
-	// Labels not parsable - this is a normal TXT record, use UUID from Labels directly
 	p.Log.Debugf("Endpoint corresponds to a normal TXT record: %+v", ep)
 
 	record, err = NewDnsRecordFromExistingEndpoint(ep)
