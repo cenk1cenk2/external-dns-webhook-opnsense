@@ -32,7 +32,7 @@ func NewValidator() *Validator {
 	}
 }
 
-func (v *Validator) Validate(i interface{}) error {
+func (v *Validator) Validate(i any) error {
 	rv := reflect.ValueOf(i)
 
 	for rv.Kind() == reflect.Pointer {
@@ -54,7 +54,7 @@ func (v *Validator) Validate(i interface{}) error {
 			}
 
 			if elem.Kind() == reflect.Struct {
-				var ptr interface{}
+				var ptr any
 				if elem.CanAddr() {
 					ptr = elem.Addr().Interface()
 				} else {
@@ -79,7 +79,7 @@ func (v *Validator) Validate(i interface{}) error {
 		return nil
 	}
 
-	var ptr interface{}
+	var ptr any
 	if rv.CanAddr() {
 		ptr = rv.Addr().Interface()
 	} else {

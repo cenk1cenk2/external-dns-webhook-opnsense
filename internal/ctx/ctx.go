@@ -16,13 +16,13 @@ type Context struct {
 }
 
 type BindTarget struct {
-	Path    interface{}
-	Query   interface{}
-	Headers interface{}
-	Body    interface{}
+	Path    any
+	Query   any
+	Headers any
+	Body    any
 }
 
-func NewContext(c *echo.Context, with ...interface{}) *Context {
+func NewContext(c *echo.Context, with ...any) *Context {
 	cc := &Context{
 		Context: c,
 	}
@@ -62,7 +62,7 @@ func (c *Context) BindTarget(target *BindTarget) error {
 	return nil
 }
 
-func (c *Context) BindPathParams(i interface{}) error {
+func (c *Context) BindPathParams(i any) error {
 	if err := echo.BindPathValues(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind path parameters: %w", err)
 	}
@@ -74,7 +74,7 @@ func (c *Context) BindPathParams(i interface{}) error {
 	return nil
 }
 
-func (c *Context) BindQueryParams(i interface{}) error {
+func (c *Context) BindQueryParams(i any) error {
 	if err := echo.BindQueryParams(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind query parameters: %w", err)
 	}
@@ -86,7 +86,7 @@ func (c *Context) BindQueryParams(i interface{}) error {
 	return nil
 }
 
-func (c *Context) BindHeaders(i interface{}) error {
+func (c *Context) BindHeaders(i any) error {
 	if err := echo.BindHeaders(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind headers: %w", err)
 	}
@@ -98,7 +98,7 @@ func (c *Context) BindHeaders(i interface{}) error {
 	return nil
 }
 
-func (c *Context) BindBody(i interface{}) error {
+func (c *Context) BindBody(i any) error {
 	if err := echo.BindBody(c.Context, i); err != nil {
 		return fmt.Errorf("failed to bind body: %w", err)
 	}
@@ -110,7 +110,7 @@ func (c *Context) BindBody(i interface{}) error {
 	return nil
 }
 
-func (c *Context) With(with ...interface{}) *Context {
+func (c *Context) With(with ...any) *Context {
 	for _, v := range with {
 		switch w := v.(type) {
 		case *services.Logger:
