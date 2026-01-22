@@ -121,7 +121,7 @@ helm install external-dns external-dns/external-dns \
 | -------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------- | ------- |
 | `--log-level` / `$LOG_LEVEL`     | Log level for the application.                                                                        | `enum("debug", "info", "warning", "error", "fatal")` | `false`  | `info`  |
 | `--log-encoder` / `$LOG_ENCODER` | Log encoder format.                                                                                   | `enum("console", "json")`                            | `false`  | `json`  |
-| `--port` / `$PORT`               | Port on which the webhook server will listen.                                                         | `uint16`                                             | `false`  | `8888`  |
+| `--port` / `$PORT`               | Port on which the server will listen.                                                                 | `uint16`                                             | `false`  | `8888`  |
 | `--health-port` / `$HEALTH_PORT` | Port on which the health check server will listen.                                                    | `uint16`                                             | `false`  | `8080`  |
 | `--dry-run` / `$DRY_RUN`         | The application will not make any changes to the OPNsense DNS records, only log the intended actions. | `bool`                                               | `false`  | `false` |
 
@@ -136,22 +136,22 @@ helm install external-dns external-dns/external-dns \
 
 ### OPNsense Retry Configuration
 
-| Flag / Environment                                 | Description                                                         | Type    | Required | Default |
-| -------------------------------------------------- | ------------------------------------------------------------------- | ------- | -------- | ------- |
-| `--opnsense-min-backoff` / `$OPNSENSE_MIN_BACKOFF` | Minimum backoff time in seconds for retrying OPNsense API requests. | `int64` | `false`  | `120`   |
-| `--opnsense-max-backoff` / `$OPNSENSE_MAX_BACKOFF` | Maximum backoff time in seconds for retrying OPNsense API requests. | `int64` | `false`  | `120`   |
-| `--opnsense-max-retries` / `$OPNSENSE_MAX_RETRIES` | Maximum retries for OPNsense API requests.                          | `int64` | `false`  | `120`   |
+| Flag / Environment                                 | Description                                                         | Type       | Required | Default |
+| -------------------------------------------------- | ------------------------------------------------------------------- | ---------- | -------- | ------- |
+| `--opnsense-max-retries` / `$OPNSENSE_MAX_RETRIES` | Maximum number of retries for OPNsense API requests.                | `int`      | `false`  | `3`     |
+| `--opnsense-min-backoff` / `$OPNSENSE_MIN_BACKOFF` | Minimum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `3s`    |
+| `--opnsense-max-backoff` / `$OPNSENSE_MAX_BACKOFF` | Maximum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `30s`   |
 
 ### Domain Filtering
 
 These flags match the upstream [external-dns domain filtering configuration](https://github.com/kubernetes-sigs/external-dns/blob/master/docs/flags.md).
 
-| Flag / Environment                                     | Description                          | Type       | Required | Default |
-| ------------------------------------------------------ | ------------------------------------ | ---------- | -------- | ------- |
-| `--domain-filter` / `$DOMAIN_FILTER`                   | List of domain include filters.      | `string[]` | `false`  | -       |
-| `--exclude-domains` / `$EXCLUDE_DOMAINS`               | List of domain exclude filters.      | `string[]` | `false`  | -       |
-| `--regex-domain-filter` / `$REGEX_DOMAIN_FILTER`       | Domain include filter in regex form. | `string`   | `false`  | -       |
-| `--regex-domain-exclusion` / `$REGEX_DOMAIN_EXCLUSION` | Domain exclude filter in regex form. | `string`   | `false`  | -       |
+| Flag / Environment                                     | Description                                   | Type       | Required | Default |
+| ------------------------------------------------------ | --------------------------------------------- | ---------- | -------- | ------- |
+| `--domain-filter` / `$DOMAIN_FILTER`                   | List of domain include filters.               | `string[]` | `false`  | -       |
+| `--exclude-domains` / `$EXCLUDE_DOMAINS`               | List of domain exclude filters.               | `string[]` | `false`  | -       |
+| `--regex-domain-filter` / `$REGEX_DOMAIN_FILTER`       | List of domain exclude filters in regex form. | `string`   | `false`  | -       |
+| `--regex-domain-exclusion` / `$REGEX_DOMAIN_EXCLUSION` | List of domain exclude filters in regex form. | `string`   | `false`  | -       |
 
 <!--- clidocsstop -->
 
