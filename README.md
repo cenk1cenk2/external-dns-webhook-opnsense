@@ -16,6 +16,16 @@ This webhook provider acts as a bridge between `external-dns` and OPNsense's Unb
 └─────────────────┘         └──────────────────────┘         └──────────────┘
 ```
 
+## Features
+
+- Supports `A`, `AAAA`, `TXT` record types.
+- Supports `TXT` registry for ownership management.
+- Supports domain filtering capabilities of `external-dns`.
+- Supports multiple targets for DNS records.
+- Can run multiple instances for different domains and clusters as well as manual management. This is the feature goal ignited this implementation since [crutonjohn/external-dns-opnsense-webhook](https://github.com/crutonjohn/external-dns-opnsense-webhook) could do everything else, but this.
+- Does not support `CNAME` records since OPNSense Unbound uses a different mechanism of having aliases for that purpose, however that still relies on original record to exist.
+- Can support `MX` records however I have not implemented it yet, since I do not need it personally. Contributions are welcome.
+
 ## Installation
 
 The recommended way to install this webhook is using the [external-dns Helm chart](https://github.com/kubernetes-sigs/external-dns/tree/master/charts/external-dns) with the webhook provider configured as a sidecar.
