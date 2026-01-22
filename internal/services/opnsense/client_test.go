@@ -1,8 +1,6 @@
 package opnsense_test
 
 import (
-	"github.com/browningluke/opnsense-go/pkg/api"
-	"github.com/browningluke/opnsense-go/pkg/unbound"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	. "github.com/onsi/ginkgo/v2"
@@ -12,16 +10,15 @@ import (
 var _ = Describe("Opnsense Client", func() {
 	It("should create a new client", func(ctx SpecContext) {
 		client, err := opnsense.NewClient(
-			&opnsense.OpnsenseClientSvc{
+			&opnsense.ClientSvc{
 				Logger: fixtures.NewTestLogger(),
 			},
-			opnsense.OpnsenseClientConfig{
-				Options: api.Options{
-					Uri:       "opnsense.invalid",
-					APIKey:    "testkey",
-					APISecret: "testsecret",
-				},
-				DryRun: false,
+			opnsense.ClientConfig{
+				Uri:           "opnsense.invalid",
+				APIKey:        "testkey",
+				APISecret:     "testsecret",
+				AllowInsecure: false,
+				DryRun:        false,
 			},
 		)
 
@@ -35,21 +32,31 @@ var _ = Describe("Opnsense Client", func() {
 		)
 
 		BeforeEach(func() {
-			client = &opnsense.Client{
-				Log:    fixtures.NewTestLogger().Sugar(),
-				Config: opnsense.OpnsenseClientConfig{DryRun: true},
-			}
+			c, err := opnsense.NewClient(
+				&opnsense.ClientSvc{
+					Logger: fixtures.NewTestLogger(),
+				},
+				opnsense.ClientConfig{
+					Uri:           "opnsense.invalid",
+					APIKey:        "testkey",
+					APISecret:     "testsecret",
+					AllowInsecure: false,
+					DryRun:        true,
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+			client = c
 		})
 
 		It("should not modify anything on create", func(ctx SpecContext) {
-			uuid, err := client.UnboundCreateHostOverride(ctx, &unbound.HostOverride{})
+			uuid, err := client.UnboundCreateHostOverride(ctx, &opnsense.UnboundHostOverride{})
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(uuid).To(Equal(""))
 		})
 
 		It("should not modify anything on update", func(ctx SpecContext) {
-			err := client.UnboundUpdateHostOverride(ctx, "", &unbound.HostOverride{})
+			err := client.UnboundUpdateHostOverride(ctx, "", &opnsense.UnboundHostOverride{})
 
 			Expect(err).ToNot(HaveOccurred())
 		})

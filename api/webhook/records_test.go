@@ -7,9 +7,9 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/browningluke/opnsense-go/pkg/unbound"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	"github.com/labstack/echo/v5"
@@ -34,7 +34,7 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(nil, fmt.Errorf("")).Once()
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(nil, fmt.Errorf("")).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusUnprocessableEntity))
@@ -45,7 +45,7 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(&unbound.SearchHostOverrideResponse{}, nil).Once()
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(&opnsense.UnboundSearchHostOverrideResponse{}, nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
@@ -61,12 +61,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    1,
 					RowCount: 1,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:       "id",
 							Enabled:  "1",
@@ -100,12 +100,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    1,
 					RowCount: 1,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:      "id-txt",
 							Enabled: "1",
@@ -137,12 +137,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    1,
 					RowCount: 1,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:          "id-with-desc",
 							Enabled:     "1",
@@ -180,12 +180,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    2,
 					RowCount: 2,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:       "id-a",
 							Enabled:  "1",
@@ -228,12 +228,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    3,
 					RowCount: 3,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:       "id-a-1",
 							Enabled:  "1",
@@ -296,12 +296,12 @@ var _ = Describe("records", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{
 					Total:    2,
 					RowCount: 2,
 					Current:  1,
-					Rows: []unbound.SearchHostOverrideItem{
+					Rows: []opnsense.UnboundSearchHostOverrideItem{
 						{
 							Id:      "id-txt-1",
 							Enabled: "1",
@@ -378,6 +378,7 @@ var _ = Describe("records", func() {
 
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-A").Return(nil).Once()
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-AAAA").Return(nil).Once()
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -401,6 +402,7 @@ var _ = Describe("records", func() {
 
 				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -432,7 +434,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundUpdateHostOverride(mock.Anything, "id-A", &unbound.HostOverride{
+					UnboundUpdateHostOverride(mock.Anything, "id-A", &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -443,7 +445,7 @@ var _ = Describe("records", func() {
 					Once()
 
 				mocks.Client.EXPECT().
-					UnboundUpdateHostOverride(mock.Anything, "id-AAAA", &unbound.HostOverride{
+					UnboundUpdateHostOverride(mock.Anything, "id-AAAA", &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -452,6 +454,8 @@ var _ = Describe("records", func() {
 					}).
 					Return(nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -493,7 +497,7 @@ var _ = Describe("records", func() {
 
 				// Normal TXT records (non-parsable Labels) use UUID directly without searching
 				mocks.Client.EXPECT().
-					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
+					UnboundUpdateHostOverride(mock.Anything, "id-txt", &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "example.com",
 						Type:    "TXT",
@@ -501,6 +505,8 @@ var _ = Describe("records", func() {
 					}).
 					Return(nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -524,7 +530,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -534,7 +540,7 @@ var _ = Describe("records", func() {
 					Return("id-A", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -543,6 +549,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-AAAA", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -567,7 +575,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -577,7 +585,7 @@ var _ = Describe("records", func() {
 					Return("id-A-1", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -587,7 +595,7 @@ var _ = Describe("records", func() {
 					Return("id-A-2", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -596,6 +604,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-A-3", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -616,7 +626,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "a-example.com",
 						Type:    "TXT",
@@ -624,6 +634,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-txt", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -648,7 +660,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "example.com",
 						Type:    "TXT",
@@ -657,7 +669,7 @@ var _ = Describe("records", func() {
 					Return("id-txt-1", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "example.com",
 						Type:    "TXT",
@@ -665,6 +677,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-txt-2", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -686,7 +700,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:     "1",
 						Hostname:    "api",
 						Domain:      "example.com",
@@ -696,6 +710,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-api", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
@@ -719,7 +735,7 @@ var _ = Describe("records", func() {
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "example",
 						Domain:   "com",
@@ -729,7 +745,7 @@ var _ = Describe("records", func() {
 					Return("id-A", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "a-example.com",
 						Type:    "TXT",
@@ -738,7 +754,7 @@ var _ = Describe("records", func() {
 					Return("id-txt-a", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled:  "1",
 						Hostname: "test",
 						Domain:   "example.com",
@@ -748,7 +764,7 @@ var _ = Describe("records", func() {
 					Return("id-AAAA", nil).
 					Once()
 				mocks.Client.EXPECT().
-					UnboundCreateHostOverride(mock.Anything, &unbound.HostOverride{
+					UnboundCreateHostOverride(mock.Anything, &opnsense.UnboundHostOverride{
 						Enabled: "1",
 						Domain:  "aaaa-test.example.com",
 						Type:    "TXT",
@@ -756,6 +772,8 @@ var _ = Describe("records", func() {
 					}).
 					Return("id-txt-aaaa", nil).
 					Once()
+
+				mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 

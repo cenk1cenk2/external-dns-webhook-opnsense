@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/urfave/cli/v3"
 )
 
@@ -70,7 +72,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_URL"),
 			),
 			Required:    true,
-			Destination: &c.OpnsenseClient.Options.Uri,
+			Destination: &c.OpnsenseClient.Uri,
 		},
 
 		&cli.StringFlag{
@@ -80,7 +82,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_API_KEY"),
 			),
 			Required:    true,
-			Destination: &c.OpnsenseClient.Options.APIKey,
+			Destination: &c.OpnsenseClient.APIKey,
 		},
 
 		&cli.StringFlag{
@@ -90,7 +92,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_API_SECRET"),
 			),
 			Required:    true,
-			Destination: &c.OpnsenseClient.Options.APISecret,
+			Destination: &c.OpnsenseClient.APISecret,
 		},
 
 		&cli.BoolFlag{
@@ -101,40 +103,40 @@ func BindFlags(c *Config) []cli.Flag {
 			),
 			Required:    false,
 			Value:       false,
-			Destination: &c.OpnsenseClient.Options.AllowInsecure,
+			Destination: &c.OpnsenseClient.AllowInsecure,
 		},
 
-		&cli.Int64Flag{
-			Name:  "opnsense-max-backoff",
-			Usage: "Maximum backoff time in seconds for retrying OPNsense API requests.",
-			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("OPNSENSE_MAX_BACKOFF"),
-			),
-			Required:    false,
-			Value:       120,
-			Destination: &c.OpnsenseClient.Options.MaxBackoff,
-		},
-
-		&cli.Int64Flag{
-			Name:  "opnsense-min-backoff",
-			Usage: "Minimum backoff time in seconds for retrying OPNsense API requests.",
-			Sources: cli.NewValueSourceChain(
-				cli.EnvVar("OPNSENSE_MIN_BACKOFF"),
-			),
-			Required:    false,
-			Value:       120,
-			Destination: &c.OpnsenseClient.Options.MinBackoff,
-		},
-
-		&cli.Int64Flag{
+		&cli.IntFlag{
 			Name:  "opnsense-max-retries",
-			Usage: "Maximum retries for OPNsense API requests.",
+			Usage: "Maximum number of retries for OPNsense API requests.",
 			Sources: cli.NewValueSourceChain(
 				cli.EnvVar("OPNSENSE_MAX_RETRIES"),
 			),
 			Required:    false,
-			Value:       120,
-			Destination: &c.OpnsenseClient.Options.MaxRetries,
+			Value:       3,
+			Destination: &c.OpnsenseClient.MaxRetries,
+		},
+
+		&cli.DurationFlag{
+			Name:  "opnsense-min-backoff",
+			Usage: "Minimum backoff duration between retries for OPNsense API requests.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("OPNSENSE_MIN_BACKOFF"),
+			),
+			Required:    false,
+			Value:       3 * time.Second,
+			Destination: &c.OpnsenseClient.MinBackoff,
+		},
+
+		&cli.DurationFlag{
+			Name:  "opnsense-max-backoff",
+			Usage: "Maximum backoff duration between retries for OPNsense API requests.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("OPNSENSE_MAX_BACKOFF"),
+			),
+			Required:    false,
+			Value:       30 * time.Second,
+			Destination: &c.OpnsenseClient.MaxBackoff,
 		},
 
 		// match with upstream: https://github.com/kubernetes-sigs/external-dns/blob/master/docs/flags.md

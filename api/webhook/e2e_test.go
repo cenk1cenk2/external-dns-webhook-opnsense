@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"github.com/browningluke/opnsense-go/pkg/unbound"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	"github.com/google/uuid"
@@ -24,7 +24,7 @@ var _ = Describe("E2E Flow", func() {
 	Describe("Complete lifecycle - Multiple targets", func() {
 		It("should handle the complete flow: create → reconcile → update → delete", func() {
 			// Track created UUIDs to simulate OPNsense state
-			created := make(map[string]*unbound.SearchHostOverrideItem)
+			created := make(map[string]*opnsense.UnboundSearchHostOverrideItem)
 
 			var (
 				req *http.Request
@@ -66,8 +66,8 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Rows: []unbound.SearchHostOverrideItem{}},
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Rows: []opnsense.UnboundSearchHostOverrideItem{}},
 				nil,
 			).Once()
 
@@ -87,9 +87,9 @@ var _ = Describe("E2E Flow", func() {
 			// Mock creates - OPNsense returns UUIDs
 			for range adjusted {
 				mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
-					func(_ context.Context, h *unbound.HostOverride) (string, error) {
+					func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
 						id := uuid.NewString()
-						created[id] = &unbound.SearchHostOverrideItem{
+						created[id] = &opnsense.UnboundSearchHostOverrideItem{
 							Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 							Domain: h.Domain, Type: h.Type, Server: h.Server,
 						}
@@ -97,6 +97,7 @@ var _ = Describe("E2E Flow", func() {
 					},
 				).Once()
 			}
+			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
@@ -135,13 +136,13 @@ var _ = Describe("E2E Flow", func() {
 			c, res = fixtures.CreateEchoContext(nil, req)
 
 			// Return created records from mock OPNsense
-			rows := make([]unbound.SearchHostOverrideItem, 0, len(created))
+			rows := make([]opnsense.UnboundSearchHostOverrideItem, 0, len(created))
 			for _, r := range created {
 				rows = append(rows, *r)
 			}
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
 				nil,
 			).Once()
 
@@ -203,8 +204,8 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
 				nil,
 			).Once()
 
@@ -251,16 +252,17 @@ var _ = Describe("E2E Flow", func() {
 
 			// Mock create - new record
 			mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
-				func(_ context.Context, h *unbound.HostOverride) (string, error) {
+				func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
 					Expect(h.Server).To(Equal("10.0.0.3"))
 					id := uuid.NewString()
-					created[id] = &unbound.SearchHostOverrideItem{
+					created[id] = &opnsense.UnboundSearchHostOverrideItem{
 						Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 						Domain: h.Domain, Type: h.Type, Server: h.Server,
 					}
 					return id, nil
 				},
 			).Once()
+			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
@@ -279,13 +281,13 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			rows = make([]unbound.SearchHostOverrideItem, 0, len(created))
+			rows = make([]opnsense.UnboundSearchHostOverrideItem, 0, len(created))
 			for _, r := range created {
 				rows = append(rows, *r)
 			}
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows},
 				nil,
 			).Once()
 
@@ -309,6 +311,7 @@ var _ = Describe("E2E Flow", func() {
 				deletedUUIDs[id] = true
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, id).Return(nil).Once()
 			}
+			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
@@ -318,7 +321,7 @@ var _ = Describe("E2E Flow", func() {
 
 	Describe("Complete lifecycle - Single target", func() {
 		It("should handle single-target endpoint without duplicates", func() {
-			created := make(map[string]*unbound.SearchHostOverrideItem)
+			created := make(map[string]*opnsense.UnboundSearchHostOverrideItem)
 
 			var (
 				req *http.Request
@@ -347,8 +350,8 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, _ = fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Rows: []unbound.SearchHostOverrideItem{}}, nil,
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Rows: []opnsense.UnboundSearchHostOverrideItem{}}, nil,
 			).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
@@ -362,15 +365,16 @@ var _ = Describe("E2E Flow", func() {
 			c, _ = fixtures.CreateEchoContext(nil, req)
 
 			mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
-				func(_ context.Context, h *unbound.HostOverride) (string, error) {
+				func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
 					id := uuid.NewString()
-					created[id] = &unbound.SearchHostOverrideItem{
+					created[id] = &opnsense.UnboundSearchHostOverrideItem{
 						Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 						Domain: h.Domain, Type: h.Type, Server: h.Server,
 					}
 					return id, nil
 				},
 			).Once()
+			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 
@@ -393,12 +397,12 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			rows := make([]unbound.SearchHostOverrideItem, 0, len(created))
+			rows := make([]opnsense.UnboundSearchHostOverrideItem, 0, len(created))
 			for _, r := range created {
 				rows = append(rows, *r)
 			}
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Total: 1, RowCount: 1, Rows: rows}, nil,
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Total: 1, RowCount: 1, Rows: rows}, nil,
 			).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
@@ -410,7 +414,7 @@ var _ = Describe("E2E Flow", func() {
 
 	Describe("Complete lifecycle - TXT records", func() {
 		It("should handle TXT records with multiple values", func() {
-			created := make(map[string]*unbound.SearchHostOverrideItem)
+			created := make(map[string]*opnsense.UnboundSearchHostOverrideItem)
 
 			var (
 				req *http.Request
@@ -442,8 +446,8 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, _ = fixtures.CreateEchoContext(nil, req)
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Rows: []unbound.SearchHostOverrideItem{}}, nil,
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Rows: []opnsense.UnboundSearchHostOverrideItem{}}, nil,
 			).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
@@ -458,15 +462,16 @@ var _ = Describe("E2E Flow", func() {
 
 			for range adjusted {
 				mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
-					func(_ context.Context, h *unbound.HostOverride) (string, error) {
+					func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
 						id := uuid.NewString()
-						created[id] = &unbound.SearchHostOverrideItem{
+						created[id] = &opnsense.UnboundSearchHostOverrideItem{
 							Id: id, Enabled: h.Enabled, Domain: h.Domain, Type: h.Type, TxtData: h.TxtData,
 						}
 						return id, nil
 					},
 				).Once()
 			}
+			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(created).To(HaveLen(2))
@@ -476,13 +481,13 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			rows := make([]unbound.SearchHostOverrideItem, 0, len(created))
+			rows := make([]opnsense.UnboundSearchHostOverrideItem, 0, len(created))
 			for _, r := range created {
 				rows = append(rows, *r)
 			}
 
-			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(
-				&unbound.SearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows}, nil,
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(
+				&opnsense.UnboundSearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows}, nil,
 			).Once()
 
 			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())

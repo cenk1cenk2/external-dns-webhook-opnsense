@@ -17,7 +17,7 @@ type Config struct {
 	Api    api.ApiConfig
 	Probes probes.ApiConfig
 
-	OpnsenseClient opnsense.OpnsenseClientConfig
+	OpnsenseClient opnsense.ClientConfig
 	Provider       provider.ProviderConfig
 }
 
