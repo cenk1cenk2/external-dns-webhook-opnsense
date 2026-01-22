@@ -42,7 +42,7 @@ func main() {
 			}
 
 			client, err := opnsense.NewClient(
-				&opnsense.OpnsenseClientSvc{
+				&opnsense.ClientSvc{
 					Logger: logger,
 				},
 				conf.OpnsenseClient,

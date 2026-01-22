@@ -155,12 +155,8 @@ These flags match the upstream [external-dns domain filtering configuration](htt
 
 <!--- clidocsstop -->
 
-## Disclaimers
-
-- Currently project uses the [fork](https://github.com/cenk1cenk2/opnsense-go/tree/patch-1) of [opnsense-go](https://github.com/browningluke/opnsense-go) library. Once the PR is merged we will switch back to the mainline.
-
 ## Related Projects
 
 - [external-dns](https://github.com/kubernetes-sigs/external-dns) - The core library that enables this.
-- [opnsense-go](https://github.com/browningluke/opnsense-go) - OPNsense API client library that is used in this webhook provider.
+- [opnsense-go](https://github.com/browningluke/opnsense-go) - ~OPNsense API client library that is used in this webhook provider.~ I have initially used this however for each CRUD it was reconfiguring services, so I had to rewrite a similar implementation.
 - [crutonjohn/external-dns-opnsense-webhook](https://github.com/crutonjohn/external-dns-opnsense-webhook) - Initial implementation that inspered this project.

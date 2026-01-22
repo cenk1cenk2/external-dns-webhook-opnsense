@@ -45,7 +45,7 @@ func NewProvider(svc *ProviderSvc, conf ProviderConfig) (*Provider, error) {
 
 // Records returns the list of records from OPNsense Unbound DNS.
 func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
-	result, err := p.Client.UnboundSearchHostOverrides(ctx)
+	result, err := p.Client.UnboundSearchHostOverrides(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query for host overrides: %w", err)
 	}
@@ -285,6 +285,15 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 
 	}
 
+	if len(changes.Create) > 0 || len(changes.UpdateNew) > 0 || len(changes.Delete) > 0 {
+		p.Log.Infof("Reconfiguring Unbound service: applied %d creates, %d updates, %d deletes", len(changes.Create), len(changes.UpdateNew), len(changes.Delete))
+		if err := p.Client.ReconfigureService(ctx); err != nil {
+			return fmt.Errorf("failed to reconfigure Unbound service: %w", err)
+		}
+
+		p.Log.Infof("Unbound service reconfigured.")
+	}
+
 	return nil
 }
 
@@ -300,35 +309,37 @@ func (p *Provider) handleTxtRecordMatching(ctx context.Context, ep *endpoint.End
 		return nil, fmt.Errorf("failed to create record from endpoint %s: %w", ep.DNSName, err)
 	}
 
-	if _, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
+	if epLabels, err := endpoint.NewLabelsFromString(record.TxtData, nil); err == nil {
 		p.Log.Debugf("Endpoint corresponds to a registry record: %+v", ep)
-		all, err := p.Records(ctx)
+		overrides, err := p.Client.UnboundSearchHostOverrides(ctx, &opnsense.UnboundSearchHostOverrideRequest{
+			SearchPhrase: ep.DNSName,
+			RowCount:     -1,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch all records for matching TXT record: %w", err)
 		}
 
-		var matched *endpoint.Endpoint
-		for _, current := range all {
-			if current.DNSName == ep.DNSName && current.RecordType == ep.RecordType && current.SetIdentifier == ep.SetIdentifier && current.Labels != nil && ep.Labels != nil &&
-				current.Labels["owner"] == ep.Labels["owner"] && current.Labels["resource"] == ep.Labels["resource"] {
-				matched = current
+		var record *DnsRecord
+		for _, row := range overrides.Rows {
+			rowLabels, err := endpoint.NewLabelsFromString(row.TxtData, nil)
+			if err != nil {
+				continue
+			}
+			if row.Domain == ep.DNSName && row.Type == ep.RecordType && rowLabels[EndpointLabelSetIdentifier.String()] == ep.SetIdentifier &&
+				rowLabels["owner"] == epLabels["owner"] &&
+				rowLabels["resource"] == epLabels["resource"] {
+				record = NewDnsRecord(row)
 				break
 			}
 		}
 
-		if matched == nil {
+		if record == nil {
 			return nil, fmt.Errorf("failed to find matching TXT record for %s with SetIdentifier %s", ep.DNSName, ep.SetIdentifier)
-		}
-
-		record, err := NewDnsRecordFromExistingEndpoint(matched)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create record from matched endpoint %s: %w", ep.DNSName, err)
 		}
 
 		return record, nil
 	}
 
-	// Labels not parsable - this is a normal TXT record, use UUID from Labels directly
 	p.Log.Debugf("Endpoint corresponds to a normal TXT record: %+v", ep)
 
 	record, err = NewDnsRecordFromExistingEndpoint(ep)

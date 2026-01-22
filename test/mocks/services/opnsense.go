@@ -7,7 +7,7 @@ package mockservices
 import (
 	"context"
 
-	"github.com/browningluke/opnsense-go/pkg/unbound"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -89,8 +89,59 @@ func (_c *MockClientAdapter_CheckUnboundService_Call) RunAndReturn(run func(ctx 
 	return _c
 }
 
+// ReconfigureService provides a mock function for the type MockClientAdapter
+func (_mock *MockClientAdapter) ReconfigureService(ctx context.Context) error {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReconfigureService")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockClientAdapter_ReconfigureService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReconfigureService'
+type MockClientAdapter_ReconfigureService_Call struct {
+	*mock.Call
+}
+
+// ReconfigureService is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockClientAdapter_Expecter) ReconfigureService(ctx interface{}) *MockClientAdapter_ReconfigureService_Call {
+	return &MockClientAdapter_ReconfigureService_Call{Call: _e.mock.On("ReconfigureService", ctx)}
+}
+
+func (_c *MockClientAdapter_ReconfigureService_Call) Run(run func(ctx context.Context)) *MockClientAdapter_ReconfigureService_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockClientAdapter_ReconfigureService_Call) Return(err error) *MockClientAdapter_ReconfigureService_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockClientAdapter_ReconfigureService_Call) RunAndReturn(run func(ctx context.Context) error) *MockClientAdapter_ReconfigureService_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UnboundCreateHostOverride provides a mock function for the type MockClientAdapter
-func (_mock *MockClientAdapter) UnboundCreateHostOverride(ctx context.Context, req *unbound.HostOverride) (string, error) {
+func (_mock *MockClientAdapter) UnboundCreateHostOverride(ctx context.Context, req *opnsense.UnboundHostOverride) (string, error) {
 	ret := _mock.Called(ctx, req)
 
 	if len(ret) == 0 {
@@ -99,15 +150,15 @@ func (_mock *MockClientAdapter) UnboundCreateHostOverride(ctx context.Context, r
 
 	var r0 string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *unbound.HostOverride) (string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *opnsense.UnboundHostOverride) (string, error)); ok {
 		return returnFunc(ctx, req)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *unbound.HostOverride) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *opnsense.UnboundHostOverride) string); ok {
 		r0 = returnFunc(ctx, req)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *unbound.HostOverride) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *opnsense.UnboundHostOverride) error); ok {
 		r1 = returnFunc(ctx, req)
 	} else {
 		r1 = ret.Error(1)
@@ -122,20 +173,20 @@ type MockClientAdapter_UnboundCreateHostOverride_Call struct {
 
 // UnboundCreateHostOverride is a helper method to define mock.On call
 //   - ctx context.Context
-//   - req *unbound.HostOverride
+//   - req *opnsense.UnboundHostOverride
 func (_e *MockClientAdapter_Expecter) UnboundCreateHostOverride(ctx interface{}, req interface{}) *MockClientAdapter_UnboundCreateHostOverride_Call {
 	return &MockClientAdapter_UnboundCreateHostOverride_Call{Call: _e.mock.On("UnboundCreateHostOverride", ctx, req)}
 }
 
-func (_c *MockClientAdapter_UnboundCreateHostOverride_Call) Run(run func(ctx context.Context, req *unbound.HostOverride)) *MockClientAdapter_UnboundCreateHostOverride_Call {
+func (_c *MockClientAdapter_UnboundCreateHostOverride_Call) Run(run func(ctx context.Context, req *opnsense.UnboundHostOverride)) *MockClientAdapter_UnboundCreateHostOverride_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 *unbound.HostOverride
+		var arg1 *opnsense.UnboundHostOverride
 		if args[1] != nil {
-			arg1 = args[1].(*unbound.HostOverride)
+			arg1 = args[1].(*opnsense.UnboundHostOverride)
 		}
 		run(
 			arg0,
@@ -150,7 +201,7 @@ func (_c *MockClientAdapter_UnboundCreateHostOverride_Call) Return(s string, err
 	return _c
 }
 
-func (_c *MockClientAdapter_UnboundCreateHostOverride_Call) RunAndReturn(run func(ctx context.Context, req *unbound.HostOverride) (string, error)) *MockClientAdapter_UnboundCreateHostOverride_Call {
+func (_c *MockClientAdapter_UnboundCreateHostOverride_Call) RunAndReturn(run func(ctx context.Context, req *opnsense.UnboundHostOverride) (string, error)) *MockClientAdapter_UnboundCreateHostOverride_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -213,27 +264,27 @@ func (_c *MockClientAdapter_UnboundDeleteHostOverride_Call) RunAndReturn(run fun
 }
 
 // UnboundSearchHostOverrides provides a mock function for the type MockClientAdapter
-func (_mock *MockClientAdapter) UnboundSearchHostOverrides(ctx context.Context) (*unbound.SearchHostOverrideResponse, error) {
-	ret := _mock.Called(ctx)
+func (_mock *MockClientAdapter) UnboundSearchHostOverrides(ctx context.Context, req *opnsense.UnboundSearchHostOverrideRequest) (*opnsense.UnboundSearchHostOverrideResponse, error) {
+	ret := _mock.Called(ctx, req)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UnboundSearchHostOverrides")
 	}
 
-	var r0 *unbound.SearchHostOverrideResponse
+	var r0 *opnsense.UnboundSearchHostOverrideResponse
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (*unbound.SearchHostOverrideResponse, error)); ok {
-		return returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *opnsense.UnboundSearchHostOverrideRequest) (*opnsense.UnboundSearchHostOverrideResponse, error)); ok {
+		return returnFunc(ctx, req)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) *unbound.SearchHostOverrideResponse); ok {
-		r0 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *opnsense.UnboundSearchHostOverrideRequest) *opnsense.UnboundSearchHostOverrideResponse); ok {
+		r0 = returnFunc(ctx, req)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*unbound.SearchHostOverrideResponse)
+			r0 = ret.Get(0).(*opnsense.UnboundSearchHostOverrideResponse)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *opnsense.UnboundSearchHostOverrideRequest) error); ok {
+		r1 = returnFunc(ctx, req)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -247,35 +298,41 @@ type MockClientAdapter_UnboundSearchHostOverrides_Call struct {
 
 // UnboundSearchHostOverrides is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockClientAdapter_Expecter) UnboundSearchHostOverrides(ctx interface{}) *MockClientAdapter_UnboundSearchHostOverrides_Call {
-	return &MockClientAdapter_UnboundSearchHostOverrides_Call{Call: _e.mock.On("UnboundSearchHostOverrides", ctx)}
+//   - req *opnsense.UnboundSearchHostOverrideRequest
+func (_e *MockClientAdapter_Expecter) UnboundSearchHostOverrides(ctx interface{}, req interface{}) *MockClientAdapter_UnboundSearchHostOverrides_Call {
+	return &MockClientAdapter_UnboundSearchHostOverrides_Call{Call: _e.mock.On("UnboundSearchHostOverrides", ctx, req)}
 }
 
-func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) Run(run func(ctx context.Context)) *MockClientAdapter_UnboundSearchHostOverrides_Call {
+func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) Run(run func(ctx context.Context, req *opnsense.UnboundSearchHostOverrideRequest)) *MockClientAdapter_UnboundSearchHostOverrides_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
+		var arg1 *opnsense.UnboundSearchHostOverrideRequest
+		if args[1] != nil {
+			arg1 = args[1].(*opnsense.UnboundSearchHostOverrideRequest)
+		}
 		run(
 			arg0,
+			arg1,
 		)
 	})
 	return _c
 }
 
-func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) Return(searchHostOverrideResponse *unbound.SearchHostOverrideResponse, err error) *MockClientAdapter_UnboundSearchHostOverrides_Call {
-	_c.Call.Return(searchHostOverrideResponse, err)
+func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) Return(unboundSearchHostOverrideResponse *opnsense.UnboundSearchHostOverrideResponse, err error) *MockClientAdapter_UnboundSearchHostOverrides_Call {
+	_c.Call.Return(unboundSearchHostOverrideResponse, err)
 	return _c
 }
 
-func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) RunAndReturn(run func(ctx context.Context) (*unbound.SearchHostOverrideResponse, error)) *MockClientAdapter_UnboundSearchHostOverrides_Call {
+func (_c *MockClientAdapter_UnboundSearchHostOverrides_Call) RunAndReturn(run func(ctx context.Context, req *opnsense.UnboundSearchHostOverrideRequest) (*opnsense.UnboundSearchHostOverrideResponse, error)) *MockClientAdapter_UnboundSearchHostOverrides_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UnboundUpdateHostOverride provides a mock function for the type MockClientAdapter
-func (_mock *MockClientAdapter) UnboundUpdateHostOverride(ctx context.Context, uuid string, req *unbound.HostOverride) error {
+func (_mock *MockClientAdapter) UnboundUpdateHostOverride(ctx context.Context, uuid string, req *opnsense.UnboundHostOverride) error {
 	ret := _mock.Called(ctx, uuid, req)
 
 	if len(ret) == 0 {
@@ -283,7 +340,7 @@ func (_mock *MockClientAdapter) UnboundUpdateHostOverride(ctx context.Context, u
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, *unbound.HostOverride) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, *opnsense.UnboundHostOverride) error); ok {
 		r0 = returnFunc(ctx, uuid, req)
 	} else {
 		r0 = ret.Error(0)
@@ -299,12 +356,12 @@ type MockClientAdapter_UnboundUpdateHostOverride_Call struct {
 // UnboundUpdateHostOverride is a helper method to define mock.On call
 //   - ctx context.Context
 //   - uuid string
-//   - req *unbound.HostOverride
+//   - req *opnsense.UnboundHostOverride
 func (_e *MockClientAdapter_Expecter) UnboundUpdateHostOverride(ctx interface{}, uuid interface{}, req interface{}) *MockClientAdapter_UnboundUpdateHostOverride_Call {
 	return &MockClientAdapter_UnboundUpdateHostOverride_Call{Call: _e.mock.On("UnboundUpdateHostOverride", ctx, uuid, req)}
 }
 
-func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) Run(run func(ctx context.Context, uuid string, req *unbound.HostOverride)) *MockClientAdapter_UnboundUpdateHostOverride_Call {
+func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) Run(run func(ctx context.Context, uuid string, req *opnsense.UnboundHostOverride)) *MockClientAdapter_UnboundUpdateHostOverride_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -314,9 +371,9 @@ func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) Run(run func(ctx con
 		if args[1] != nil {
 			arg1 = args[1].(string)
 		}
-		var arg2 *unbound.HostOverride
+		var arg2 *opnsense.UnboundHostOverride
 		if args[2] != nil {
-			arg2 = args[2].(*unbound.HostOverride)
+			arg2 = args[2].(*opnsense.UnboundHostOverride)
 		}
 		run(
 			arg0,
@@ -332,7 +389,7 @@ func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) Return(err error) *M
 	return _c
 }
 
-func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) RunAndReturn(run func(ctx context.Context, uuid string, req *unbound.HostOverride) error) *MockClientAdapter_UnboundUpdateHostOverride_Call {
+func (_c *MockClientAdapter_UnboundUpdateHostOverride_Call) RunAndReturn(run func(ctx context.Context, uuid string, req *opnsense.UnboundHostOverride) error) *MockClientAdapter_UnboundUpdateHostOverride_Call {
 	_c.Call.Return(run)
 	return _c
 }

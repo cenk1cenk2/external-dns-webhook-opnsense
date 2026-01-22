@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/browningluke/opnsense-go/pkg/unbound"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
 type DnsRecord struct {
-	unbound.SearchHostOverrideItem
+	opnsense.UnboundSearchHostOverrideItem
 }
 
-func NewDnsRecord(override unbound.SearchHostOverrideItem) *DnsRecord {
+func NewDnsRecord(override opnsense.UnboundSearchHostOverrideItem) *DnsRecord {
 	return &DnsRecord{
-		SearchHostOverrideItem: override,
+		UnboundSearchHostOverrideItem: override,
 	}
 }
 
@@ -49,7 +49,7 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 
 		for _, target := range ep.Targets {
 			record := &DnsRecord{
-				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
+				UnboundSearchHostOverrideItem: opnsense.UnboundSearchHostOverrideItem{
 					Enabled:     "1",
 					Type:        ep.RecordType,
 					Hostname:    hostname,
@@ -70,7 +70,7 @@ func NewDnsRecordsFromEndpoint(ep *endpoint.Endpoint) ([]*DnsRecord, error) {
 
 		for _, target := range ep.Targets {
 			record := &DnsRecord{
-				SearchHostOverrideItem: unbound.SearchHostOverrideItem{
+				UnboundSearchHostOverrideItem: opnsense.UnboundSearchHostOverrideItem{
 					Enabled:     "1",
 					Type:        ep.RecordType,
 					Domain:      ep.DNSName,
@@ -165,8 +165,8 @@ func (r *DnsRecord) GenerateSetIdentifier() string {
 	return fmt.Sprintf("%x", hash)
 }
 
-func (r *DnsRecord) IntoHostOverride() *unbound.HostOverride {
-	return &unbound.HostOverride{
+func (r *DnsRecord) IntoHostOverride() *opnsense.UnboundHostOverride {
+	return &opnsense.UnboundHostOverride{
 		Enabled:     r.Enabled,
 		Hostname:    r.Hostname,
 		Domain:      r.Domain,
