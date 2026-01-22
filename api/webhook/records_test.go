@@ -385,7 +385,7 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records", func() {
+			It("should be able to handle TXT records with UUID in Labels", func() {
 				req := httptest.NewRequest(
 					http.MethodPost,
 					"/",
@@ -399,30 +399,7 @@ var _ = Describe("records", func() {
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				// Mock the search call for registry TXT record matching
-				mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything).Return(&unbound.SearchHostOverrideResponse{
-					Rows: []unbound.SearchHostOverrideItem{
-						{
-							Id:      "id-txt1",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "aaaa-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
-						},
-						{
-							Id:      "id-txt2",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "a-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster,somethingelse",
-						},
-						{
-							Id:      "id-txt",
-							Type:    endpoint.RecordTypeTXT,
-							Domain:  "a-example.com",
-							TxtData: "heritage=external-dns,external-dns/owner=test-cluster",
-						},
-					},
-				}, nil).Once()
-
+				// When UUID exists in Labels, we use it directly without searching
 				mocks.Client.EXPECT().UnboundDeleteHostOverride(mock.Anything, "id-txt").Return(nil).Once()
 
 				c, res := fixtures.CreateEchoContext(nil, req)
@@ -482,7 +459,7 @@ var _ = Describe("records", func() {
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
-			It("should be able to handle TXT records", func() {
+			It("should be able to handle TXT records with UUID in Labels", func() {
 				setID := "065142b49fc2cfe086f80b9acf7b001c803a26ca063f8361e903aad87f129aca"
 				req := httptest.NewRequest(
 					http.MethodPost,
@@ -514,21 +491,7 @@ var _ = Describe("records", func() {
 				)
 				req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 
-				mocks.Client.EXPECT().
-					UnboundSearchHostOverrides(mock.Anything).
-					Return(&unbound.SearchHostOverrideResponse{
-						Rows: []unbound.SearchHostOverrideItem{
-							{
-								Id:      "id-txt",
-								Enabled: "1",
-								Domain:  "a-example.com",
-								Type:    "TXT",
-								TxtData: "heritage=external-dns,external-dns/owner=updated-cluster",
-							},
-						},
-					}, nil).
-					Once()
-
+				// When UUID exists in Labels, we use it directly without searching
 				mocks.Client.EXPECT().
 					UnboundUpdateHostOverride(mock.Anything, "id-txt", &unbound.HostOverride{
 						Enabled: "1",
