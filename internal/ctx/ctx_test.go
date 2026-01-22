@@ -48,7 +48,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 
@@ -84,7 +84,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 
@@ -118,7 +118,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 
@@ -154,7 +154,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 
@@ -228,7 +228,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 
@@ -250,7 +250,7 @@ var _ = Describe("Context", func() {
 
 		c, res, h := fixtures.GetEchoRouterContext(e, req)
 
-		Expect(ctx.Respond(c, h)).ToNot(HaveOccurred())
+		Expect(fixtures.Respond(c, h)).ToNot(HaveOccurred())
 		Expect(res.Code).To(Equal(http.StatusOK))
 	})
 })

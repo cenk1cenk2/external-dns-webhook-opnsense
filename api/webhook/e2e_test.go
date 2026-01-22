@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
@@ -52,7 +51,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			adjusted := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -71,7 +70,7 @@ var _ = Describe("E2E Flow", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(current).To(BeEmpty(), "No existing records initially")
 
@@ -99,7 +98,7 @@ var _ = Describe("E2E Flow", func() {
 			}
 			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
 			Expect(created).To(HaveLen(2), "Should have created 2 records in OPNsense")
 
@@ -123,7 +122,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			adjusted2 := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 
 			// Verify SetIdentifiers are STABLE (same as before)
@@ -146,7 +145,7 @@ var _ = Describe("E2E Flow", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current = *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(current).To(HaveLen(2), "Should have 2 records from OPNsense")
 
@@ -191,7 +190,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			adjusted3 := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 
 			// First endpoint (10.0.0.1) should have SAME SetIdentifier
@@ -209,7 +208,7 @@ var _ = Describe("E2E Flow", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current = *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 
 			// Find the endpoint to delete (10.0.0.2)
@@ -264,7 +263,7 @@ var _ = Describe("E2E Flow", func() {
 			).Once()
 			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
 
 			// Clean up deleted record from our mock state
@@ -291,7 +290,7 @@ var _ = Describe("E2E Flow", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current = *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(current).To(HaveLen(2))
 
@@ -313,7 +312,7 @@ var _ = Describe("E2E Flow", func() {
 			}
 			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
 			Expect(deletedUUIDs).To(HaveLen(2), "Should have deleted 2 records with correct UUIDs")
 		})
@@ -340,7 +339,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			adjusted := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(adjusted).To(HaveLen(1))
 			Expect(adjusted[0].SetIdentifier).ToNot(BeEmpty(), "Single target should get SetIdentifier")
@@ -354,7 +353,7 @@ var _ = Describe("E2E Flow", func() {
 				&opnsense.UnboundSearchHostOverrideResponse{Rows: []opnsense.UnboundSearchHostOverrideItem{}}, nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 
 			req = httptest.NewRequest(
 				http.MethodPost,
@@ -376,7 +375,7 @@ var _ = Describe("E2E Flow", func() {
 			).Once()
 			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 
 			// Step 3: Reconcile - Verify no duplicates
 			req = httptest.NewRequest(
@@ -389,7 +388,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			adjusted2 := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(adjusted2[0].SetIdentifier).To(Equal(adjusted[0].SetIdentifier), "SetIdentifier should be stable")
 
@@ -405,7 +404,7 @@ var _ = Describe("E2E Flow", func() {
 				&opnsense.UnboundSearchHostOverrideResponse{Total: 1, RowCount: 1, Rows: rows}, nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(current).To(HaveLen(1))
 			Expect(current[0].SetIdentifier).To(Equal(adjusted[0].SetIdentifier), "Current should match Desired")
@@ -437,7 +436,7 @@ var _ = Describe("E2E Flow", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res = fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			adjusted := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(adjusted).To(HaveLen(2), "Should split into 2 TXT records")
 
@@ -450,7 +449,7 @@ var _ = Describe("E2E Flow", func() {
 				&opnsense.UnboundSearchHostOverrideResponse{Rows: []opnsense.UnboundSearchHostOverrideItem{}}, nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 
 			req = httptest.NewRequest(
 				http.MethodPost,
@@ -473,7 +472,7 @@ var _ = Describe("E2E Flow", func() {
 			}
 			mocks.Client.EXPECT().ReconfigureService(mock.Anything).Return(nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(created).To(HaveLen(2))
 
 			// Step 3: Verify reconciliation works
@@ -490,7 +489,7 @@ var _ = Describe("E2E Flow", func() {
 				&opnsense.UnboundSearchHostOverrideResponse{Total: len(rows), RowCount: len(rows), Rows: rows}, nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			current := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
 			Expect(current).To(HaveLen(2))
 

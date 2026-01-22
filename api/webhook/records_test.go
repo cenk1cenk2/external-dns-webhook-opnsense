@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
@@ -25,7 +24,7 @@ var _ = Describe("records", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
 		})
 
@@ -36,7 +35,7 @@ var _ = Describe("records", func() {
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(nil, fmt.Errorf("")).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 
@@ -47,7 +46,7 @@ var _ = Describe("records", func() {
 
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(&opnsense.UnboundSearchHostOverrideResponse{}, nil).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
@@ -80,7 +79,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
@@ -118,7 +117,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
@@ -157,7 +156,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
@@ -206,7 +205,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
@@ -263,7 +262,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
@@ -321,7 +320,7 @@ var _ = Describe("records", func() {
 				nil,
 			).Once()
 
-			Expect(ctx.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
@@ -342,7 +341,7 @@ var _ = Describe("records", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodPost, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusUnsupportedMediaType))
 		})
 
@@ -356,7 +355,7 @@ var _ = Describe("records", func() {
 
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
 		})
 
@@ -382,7 +381,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -406,7 +405,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})
@@ -459,7 +458,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -510,7 +509,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})
@@ -554,7 +553,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -609,7 +608,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -639,7 +638,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -682,7 +681,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -715,7 +714,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 
@@ -777,7 +776,7 @@ var _ = Describe("records", func() {
 
 				c, res := fixtures.CreateEchoContext(nil, req)
 
-				Expect(ctx.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
+				Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 				Expect(res.Code).To(Equal(http.StatusNoContent))
 			})
 		})

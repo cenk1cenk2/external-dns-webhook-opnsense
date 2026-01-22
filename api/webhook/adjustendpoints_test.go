@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	"github.com/labstack/echo/v5"
 	"sigs.k8s.io/external-dns/endpoint"
@@ -20,7 +19,7 @@ var _ = Describe("adjustendpoints", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodPost, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusUnsupportedMediaType))
 		})
 
@@ -33,7 +32,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
@@ -52,7 +51,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
@@ -72,7 +71,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -97,7 +96,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -138,7 +137,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -173,7 +172,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -206,7 +205,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -233,7 +232,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -269,7 +268,7 @@ var _ = Describe("adjustendpoints", func() {
 			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			body := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res.Body.Bytes())
@@ -305,7 +304,7 @@ var _ = Describe("adjustendpoints", func() {
 			req1.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c1, res1 := fixtures.CreateEchoContext(nil, req1)
 
-			Expect(ctx.Respond(c1, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c1, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			body1 := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res1.Body.Bytes())
 
 			// Second call with same input
@@ -317,7 +316,7 @@ var _ = Describe("adjustendpoints", func() {
 			req2.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
 			c2, res2 := fixtures.CreateEchoContext(nil, req2)
 
-			Expect(ctx.Respond(c2, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c2, handler.HandleAdjustEndpointsPost)).ToNot(HaveOccurred())
 			body2 := *fixtures.MustJsonUnmarshal(&[]*endpoint.Endpoint{}, res2.Body.Bytes())
 
 			// SetIdentifiers should be identical

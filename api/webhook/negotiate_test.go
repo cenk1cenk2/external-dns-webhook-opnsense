@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	"github.com/labstack/echo/v5"
@@ -19,7 +18,7 @@ var _ = Describe("negotiate", func() {
 		It("should be able to validate the incoming headers", func() {
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleNegotiateGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNotAcceptable))
 		})
 
@@ -28,7 +27,7 @@ var _ = Describe("negotiate", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{}`))
@@ -44,7 +43,7 @@ var _ = Describe("negotiate", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{
@@ -67,7 +66,7 @@ var _ = Describe("negotiate", func() {
 			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
 			c, res := fixtures.CreateEchoContext(nil, req)
 
-			Expect(ctx.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleNegotiateGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 			Expect(res.Body).To(MatchJSON(`{

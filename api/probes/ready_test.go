@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/ctx"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -23,7 +22,7 @@ var _ = Describe("readyz", func() {
 			}
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleReadyGet)).ToNot(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleReadyGet)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusOK))
 		})
 
@@ -37,7 +36,7 @@ var _ = Describe("readyz", func() {
 			}
 			c, res := fixtures.CreateEchoContext(nil, httptest.NewRequest(http.MethodGet, "/", nil))
 
-			Expect(ctx.Respond(c, handler.HandleReadyGet)).To(HaveOccurred())
+			Expect(fixtures.Respond(c, handler.HandleReadyGet)).To(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusServiceUnavailable))
 		})
 	})

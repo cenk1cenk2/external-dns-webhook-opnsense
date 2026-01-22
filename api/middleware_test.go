@@ -40,7 +40,7 @@ var _ = Describe("Middleware", func() {
 		c, res, h := fixtures.GetEchoRouterContext(a.Echo, req, a.GetMiddlewares()...)
 
 		// In Echo v5, panic recovery returns an error
-		err := ctx.Respond(c, h)
+		err := fixtures.Respond(c, h)
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(ContainSubstring("PANIC RECOVER"))
 		Expect(res.Code).To(Equal(http.StatusInternalServerError))
