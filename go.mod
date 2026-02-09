@@ -14,7 +14,7 @@ require (
 	github.com/thessem/zap-prettyconsole v0.6.0
 	github.com/urfave/cli/v3 v3.6.2
 	go.uber.org/zap v1.27.1
-	golang.org/x/text v0.33.0
+	golang.org/x/text v0.34.0
 	sigs.k8s.io/external-dns v0.20.0
 )
 
