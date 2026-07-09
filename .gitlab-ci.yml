@@ -47,23 +47,14 @@ install:
   stage: install
   extends:
     - .go-install
-  rules:
-    - when: on_success
-
 lint:
   stage: build
   extends:
     - .go-lint
-  rules:
-    - when: on_success
-
 test:
   stage: build
   extends:
     - .go-test
-  rules:
-    - when: on_success
-
 build:
   stage: build
   variables:
@@ -74,9 +65,6 @@ build:
     GO_BUILD_BINARY_NAME: external-dns-webhook-opnsense
   extends:
     - .go-build
-  rules:
-    - when: on_success
-
 version:
   stage: version
   extends:
