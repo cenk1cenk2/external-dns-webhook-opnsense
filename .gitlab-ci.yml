@@ -40,7 +40,7 @@ include:
       - /references/gh-status.gitlab-ci.yml
 
 variables:
-  GO_VERSION: "1.25-alpine"
+  GO_VERSION: "1.27-alpine"
   GITHUB_STATUS_PROJECT: cenk1cenk2/external-dns-webhook-opnsense
 
 install:
