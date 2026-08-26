@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 	"go.uber.org/zap"
@@ -15,6 +16,7 @@ import (
 func (a *Api) SetupMiddleware() {
 	e := a.Echo
 	e.Validator = a.Validator
+	e.JSONSerializer = services.NewJsonSerializer()
 
 	e.OnAddRoute = func(route echo.Route) error {
 		a.log.Debugf("Registered route: %s %s", route.Method, route.Path)
