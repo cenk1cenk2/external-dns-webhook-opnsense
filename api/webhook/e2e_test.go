@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"uuid"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/webhook"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v5"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -87,7 +87,7 @@ var _ = Describe("E2E Flow", func() {
 			for range adjusted {
 				mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
 					func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
-						id := uuid.NewString()
+						id := uuid.New().String()
 						created[id] = &opnsense.UnboundSearchHostOverrideItem{
 							Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 							Domain: h.Domain, Type: h.Type, Server: h.Server,
@@ -253,7 +253,7 @@ var _ = Describe("E2E Flow", func() {
 			mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
 				func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
 					Expect(h.Server).To(Equal("10.0.0.3"))
-					id := uuid.NewString()
+					id := uuid.New().String()
 					created[id] = &opnsense.UnboundSearchHostOverrideItem{
 						Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 						Domain: h.Domain, Type: h.Type, Server: h.Server,
@@ -365,7 +365,7 @@ var _ = Describe("E2E Flow", func() {
 
 			mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
 				func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
-					id := uuid.NewString()
+					id := uuid.New().String()
 					created[id] = &opnsense.UnboundSearchHostOverrideItem{
 						Id: id, Enabled: h.Enabled, Hostname: h.Hostname,
 						Domain: h.Domain, Type: h.Type, Server: h.Server,
@@ -462,7 +462,7 @@ var _ = Describe("E2E Flow", func() {
 			for range adjusted {
 				mocks.Client.EXPECT().UnboundCreateHostOverride(mock.Anything, mock.Anything).RunAndReturn(
 					func(_ context.Context, h *opnsense.UnboundHostOverride) (string, error) {
-						id := uuid.NewString()
+						id := uuid.New().String()
 						created[id] = &opnsense.UnboundSearchHostOverrideItem{
 							Id: id, Enabled: h.Enabled, Domain: h.Domain, Type: h.Type, TxtData: h.TxtData,
 						}

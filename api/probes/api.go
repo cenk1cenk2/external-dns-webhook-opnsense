@@ -43,7 +43,11 @@ func NewApi(svc *ApiSvc, conf ApiConfig) *Api {
 		Echo:   e,
 		ApiSvc: svc,
 		log:    svc.Logger.WithCaller(),
-		server: &http.Server{},
+		server: &http.Server{
+			MaxHeaderValueCount: 100,
+			ReadHeaderTimeout:   10 * time.Second,
+			ReadTimeout:         30 * time.Second,
+		},
 	}
 
 	a.SetupMiddleware()
