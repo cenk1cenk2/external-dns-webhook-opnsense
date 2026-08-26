@@ -1,11 +1,12 @@
 package fixtures
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 )
 
 func MustJsonMarshal[T any](in T) string {
-	bytes, err := json.Marshal(in)
+	bytes, err := json.Marshal(in, jsontext.EscapeForHTML(true))
 	if err != nil {
 		panic(err)
 	}
@@ -14,7 +15,7 @@ func MustJsonMarshal[T any](in T) string {
 }
 
 func MustJsonUnmarshal[T any, K []byte | string](out T, in K) T {
-	if err := json.Unmarshal([]byte(in), &out); err != nil {
+	if err := json.Unmarshal([]byte(in), &out, json.RejectUnknownMembers(true)); err != nil {
 		panic(err)
 	}
 

@@ -13,6 +13,7 @@ import (
 func CreateEcho() *echo.Echo {
 	e := echo.New()
 	e.Validator = services.NewValidator()
+	e.JSONSerializer = services.NewJsonSerializer()
 
 	return e
 }

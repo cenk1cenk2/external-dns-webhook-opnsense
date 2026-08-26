@@ -5,7 +5,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/base64"
-	"encoding/json"
+	"encoding/json/jsontext"
+	json "encoding/json/v2"
 	"fmt"
 	"io"
 	"net/http"
@@ -86,7 +87,7 @@ func (c *Client) auth() string {
 func (c *Client) do(ctx context.Context, method string, endpoint string, body any, res any) error {
 	var reader io.Reader
 	if body != nil {
-		data, err := json.Marshal(body)
+		data, err := json.Marshal(body, jsontext.EscapeForHTML(true))
 		if err != nil {
 			return err
 		}
@@ -120,7 +121,7 @@ func (c *Client) do(ctx context.Context, method string, endpoint string, body an
 	}
 
 	if res != nil {
-		err = json.NewDecoder(r.Body).Decode(res)
+		err = json.UnmarshalRead(r.Body, res, json.RejectUnknownMembers(true))
 		if err != nil {
 			return err
 		}

@@ -1,7 +1,7 @@
 package webhook_test
 
 import (
-	"encoding/json"
+	json "encoding/json/v2"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -51,7 +51,7 @@ var _ = Describe("records", func() {
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(BeEmpty())
 		})
 
@@ -84,7 +84,7 @@ var _ = Describe("records", func() {
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(1))
 
 			Expect(body[0].DNSName).To(Equal("example.com"))
@@ -122,7 +122,7 @@ var _ = Describe("records", func() {
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(1))
 
 			Expect(body[0].DNSName).To(Equal("a-example.com"))
@@ -160,7 +160,7 @@ var _ = Describe("records", func() {
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(1))
 
 			Expect(body[0].DNSName).To(Equal("api.example.com"))
@@ -210,7 +210,7 @@ var _ = Describe("records", func() {
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(2))
 
 			Expect(body[0].DNSName).To(Equal("example.com"))
@@ -266,7 +266,7 @@ var _ = Describe("records", func() {
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(3))
 
 			Expect(body[0].DNSName).To(Equal("example.com"))
@@ -324,7 +324,7 @@ var _ = Describe("records", func() {
 			Expect(res.Code).To(Equal(http.StatusOK))
 
 			var body []endpoint.Endpoint
-			Expect(json.Unmarshal(res.Body.Bytes(), &body)).To(Succeed())
+			Expect(json.Unmarshal(res.Body.Bytes(), &body, json.RejectUnknownMembers(true))).To(Succeed())
 			Expect(body).To(HaveLen(2))
 
 			Expect(body[0].DNSName).To(Equal("example.com"))
