@@ -121,7 +121,7 @@ func (c *Client) do(ctx context.Context, method string, endpoint string, body an
 	}
 
 	if res != nil {
-		err = json.UnmarshalRead(r.Body, res, json.RejectUnknownMembers(true))
+		err = json.UnmarshalRead(r.Body, res)
 		if err != nil {
 			return err
 		}

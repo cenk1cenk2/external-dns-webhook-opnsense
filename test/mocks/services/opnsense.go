@@ -62,7 +62,7 @@ type MockClientAdapter_CheckUnboundService_Call struct {
 
 // CheckUnboundService is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockClientAdapter_Expecter) CheckUnboundService(ctx interface{}) *MockClientAdapter_CheckUnboundService_Call {
+func (_e *MockClientAdapter_Expecter) CheckUnboundService(ctx any) *MockClientAdapter_CheckUnboundService_Call {
 	return &MockClientAdapter_CheckUnboundService_Call{Call: _e.mock.On("CheckUnboundService", ctx)}
 }
 
@@ -113,7 +113,7 @@ type MockClientAdapter_ReconfigureService_Call struct {
 
 // ReconfigureService is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *MockClientAdapter_Expecter) ReconfigureService(ctx interface{}) *MockClientAdapter_ReconfigureService_Call {
+func (_e *MockClientAdapter_Expecter) ReconfigureService(ctx any) *MockClientAdapter_ReconfigureService_Call {
 	return &MockClientAdapter_ReconfigureService_Call{Call: _e.mock.On("ReconfigureService", ctx)}
 }
 
@@ -174,7 +174,7 @@ type MockClientAdapter_UnboundCreateHostOverride_Call struct {
 // UnboundCreateHostOverride is a helper method to define mock.On call
 //   - ctx context.Context
 //   - req *opnsense.UnboundHostOverride
-func (_e *MockClientAdapter_Expecter) UnboundCreateHostOverride(ctx interface{}, req interface{}) *MockClientAdapter_UnboundCreateHostOverride_Call {
+func (_e *MockClientAdapter_Expecter) UnboundCreateHostOverride(ctx any, req any) *MockClientAdapter_UnboundCreateHostOverride_Call {
 	return &MockClientAdapter_UnboundCreateHostOverride_Call{Call: _e.mock.On("UnboundCreateHostOverride", ctx, req)}
 }
 
@@ -231,7 +231,7 @@ type MockClientAdapter_UnboundDeleteHostOverride_Call struct {
 // UnboundDeleteHostOverride is a helper method to define mock.On call
 //   - ctx context.Context
 //   - uuid string
-func (_e *MockClientAdapter_Expecter) UnboundDeleteHostOverride(ctx interface{}, uuid interface{}) *MockClientAdapter_UnboundDeleteHostOverride_Call {
+func (_e *MockClientAdapter_Expecter) UnboundDeleteHostOverride(ctx any, uuid any) *MockClientAdapter_UnboundDeleteHostOverride_Call {
 	return &MockClientAdapter_UnboundDeleteHostOverride_Call{Call: _e.mock.On("UnboundDeleteHostOverride", ctx, uuid)}
 }
 
@@ -299,7 +299,7 @@ type MockClientAdapter_UnboundSearchHostOverrides_Call struct {
 // UnboundSearchHostOverrides is a helper method to define mock.On call
 //   - ctx context.Context
 //   - req *opnsense.UnboundSearchHostOverrideRequest
-func (_e *MockClientAdapter_Expecter) UnboundSearchHostOverrides(ctx interface{}, req interface{}) *MockClientAdapter_UnboundSearchHostOverrides_Call {
+func (_e *MockClientAdapter_Expecter) UnboundSearchHostOverrides(ctx any, req any) *MockClientAdapter_UnboundSearchHostOverrides_Call {
 	return &MockClientAdapter_UnboundSearchHostOverrides_Call{Call: _e.mock.On("UnboundSearchHostOverrides", ctx, req)}
 }
 
@@ -357,7 +357,7 @@ type MockClientAdapter_UnboundUpdateHostOverride_Call struct {
 //   - ctx context.Context
 //   - uuid string
 //   - req *opnsense.UnboundHostOverride
-func (_e *MockClientAdapter_Expecter) UnboundUpdateHostOverride(ctx interface{}, uuid interface{}, req interface{}) *MockClientAdapter_UnboundUpdateHostOverride_Call {
+func (_e *MockClientAdapter_Expecter) UnboundUpdateHostOverride(ctx any, uuid any, req any) *MockClientAdapter_UnboundUpdateHostOverride_Call {
 	return &MockClientAdapter_UnboundUpdateHostOverride_Call{Call: _e.mock.On("UnboundUpdateHostOverride", ctx, uuid, req)}
 }
 
