@@ -1,3 +1,9 @@
+## [1.10.4](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.10.3...v1.10.4) (2026-09-12)
+
+### Bug Fixes
+
+* **deps:** update module github.com/creasty/defaults to v1.9.0 ([91296e9](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/91296e9d9cf8e56dd303a428e277a7ccdd82f5a1))
+
 ## [1.2.1](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.2.0...v1.2.1) (2026-01-14)
 
 
