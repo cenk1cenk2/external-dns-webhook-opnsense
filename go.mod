@@ -3,7 +3,7 @@ module github.com/cenk1cenk2/external-dns-webhook-opnsense
 go 1.27.0
 
 require (
-	github.com/creasty/defaults v1.8.0
+	github.com/creasty/defaults v1.9.0
 	github.com/go-playground/validator/v10 v10.30.4
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/labstack/echo/v5 v5.3.1
