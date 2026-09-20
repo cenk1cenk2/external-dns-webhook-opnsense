@@ -1,3 +1,9 @@
+## [1.10.6](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.10.5...v1.10.6) (2026-09-20)
+
+### Bug Fixes
+
+* **deps:** update go all minor dependency updates ([892baae](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/commit/892baae61573fcc5795ecf319334898552d1537e))
+
 ## [1.10.5](https://github.com/cenk1cenk2/external-dns-webhook-opnsense/compare/v1.10.4...v1.10.5) (2026-09-13)
 
 ### Bug Fixes
