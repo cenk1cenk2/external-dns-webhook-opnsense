@@ -75,7 +75,7 @@ build:
     - .go-build
 
 github-token:
-  stage: .pre
+  stage: version
   extends:
     - .github-token
   variables:
@@ -84,6 +84,11 @@ github-token:
     GITHUB_APP_PRIVATE_KEY: ${SEMANTIC_RELEASE_GITHUB_APP_PRIVATE_KEY}
     GITHUB_TOKEN_REPOSITORIES: external-dns-webhook-opnsense
     GITHUB_TOKEN_PERMISSIONS: '{"contents":"write","issues":"write","pull_requests":"write"}'
+  needs:
+    - install
+    - lint
+    - test
+    - build
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: on_success
@@ -97,7 +102,6 @@ version:
     - .semantic-release
   needs:
     - github-token
-    - github-status-pending
     - install
     - lint
     - test
