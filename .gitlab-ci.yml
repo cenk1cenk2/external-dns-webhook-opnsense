@@ -73,6 +73,7 @@ build:
     GO_BUILD_BINARY_NAME: external-dns-webhook-opnsense
   extends:
     - .go-build
+
 github-token:
   stage: .pre
   extends:
