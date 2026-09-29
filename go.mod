@@ -6,9 +6,9 @@ require (
 	github.com/creasty/defaults v1.11.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/labstack/echo/v5 v5.3.1
+	github.com/labstack/echo/v5 v5.4.0
 	github.com/onsi/ginkgo/v2 v2.33.0
-	github.com/onsi/gomega v1.43.1
+	github.com/onsi/gomega v1.44.0
 	github.com/stretchr/testify v1.12.1
 	github.com/thessem/zap-prettyconsole v0.7.0
 	github.com/urfave/cli/v3 v3.13.0
