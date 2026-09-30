@@ -168,7 +168,7 @@ var _ = Describe("records", func() {
 			Expect(body[0].Labels[provider.EndpointLabelUUID.String()]).To(Equal("id-with-desc"))
 			Expect(body[0].ProviderSpecific).To(ContainElements(
 				endpoint.ProviderSpecificProperty{
-					Name:  "external-dns.kubernetes.io/opnsense-description",
+					Name:  provider.ProviderSpecificDescription.String(),
 					Value: "Production API endpoint",
 				},
 			))
@@ -692,7 +692,7 @@ var _ = Describe("records", func() {
 					strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
 						Create: []*endpoint.Endpoint{
 							endpoint.NewEndpoint("api.example.com", endpoint.RecordTypeA, "192.168.1.50").
-								WithProviderSpecific("external-dns.kubernetes.io/opnsense-description", "Production API endpoint"),
+								WithProviderSpecific(provider.ProviderSpecificDescription.String(), "Production API endpoint"),
 						},
 					})),
 				)
