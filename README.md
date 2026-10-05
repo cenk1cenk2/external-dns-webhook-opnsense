@@ -136,11 +136,14 @@ helm install external-dns external-dns/external-dns \
 
 ### OPNsense Retry Configuration
 
+The worst case for one OPNsense call is `timeout x (retries + 1) + backoff`, which is `2s x 2 + 500ms = 4.5s` with the defaults. It is kept below the 5s `--webhook-provider-read-timeout` of external-dns, which exits fatally when its first read fails.
+
 | Flag / Environment                                 | Description                                                         | Type       | Required | Default |
 | -------------------------------------------------- | ------------------------------------------------------------------- | ---------- | -------- | ------- |
-| `--opnsense-max-retries` / `$OPNSENSE_MAX_RETRIES` | Maximum number of retries for OPNsense API requests.                | `int`      | `false`  | `3`     |
-| `--opnsense-min-backoff` / `$OPNSENSE_MIN_BACKOFF` | Minimum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `3s`    |
-| `--opnsense-max-backoff` / `$OPNSENSE_MAX_BACKOFF` | Maximum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `30s`   |
+| `--opnsense-timeout` / `$OPNSENSE_TIMEOUT`         | Timeout for each attempt of an OPNsense API request.                | `duration` | `false`  | `2s`    |
+| `--opnsense-max-retries` / `$OPNSENSE_MAX_RETRIES` | Maximum number of retries for OPNsense API requests.                | `int`      | `false`  | `1`     |
+| `--opnsense-min-backoff` / `$OPNSENSE_MIN_BACKOFF` | Minimum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `500ms` |
+| `--opnsense-max-backoff` / `$OPNSENSE_MAX_BACKOFF` | Maximum backoff duration between retries for OPNsense API requests. | `duration` | `false`  | `2s`    |
 
 ### Domain Filtering
 

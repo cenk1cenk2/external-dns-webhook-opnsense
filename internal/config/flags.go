@@ -106,6 +106,17 @@ func BindFlags(c *Config) []cli.Flag {
 			Destination: &c.OpnsenseClient.AllowInsecure,
 		},
 
+		&cli.DurationFlag{
+			Name:  "opnsense-timeout",
+			Usage: "Timeout for each attempt of an OPNsense API request.",
+			Sources: cli.NewValueSourceChain(
+				cli.EnvVar("OPNSENSE_TIMEOUT"),
+			),
+			Required:    false,
+			Value:       2 * time.Second,
+			Destination: &c.OpnsenseClient.Timeout,
+		},
+
 		&cli.IntFlag{
 			Name:  "opnsense-max-retries",
 			Usage: "Maximum number of retries for OPNsense API requests.",
@@ -113,7 +124,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_MAX_RETRIES"),
 			),
 			Required:    false,
-			Value:       3,
+			Value:       1,
 			Destination: &c.OpnsenseClient.MaxRetries,
 		},
 
@@ -124,7 +135,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_MIN_BACKOFF"),
 			),
 			Required:    false,
-			Value:       3 * time.Second,
+			Value:       500 * time.Millisecond,
 			Destination: &c.OpnsenseClient.MinBackoff,
 		},
 
@@ -135,7 +146,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_MAX_BACKOFF"),
 			),
 			Required:    false,
-			Value:       30 * time.Second,
+			Value:       2 * time.Second,
 			Destination: &c.OpnsenseClient.MaxBackoff,
 		},
 

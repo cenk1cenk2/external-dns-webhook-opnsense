@@ -50,6 +50,7 @@ type ClientConfig struct {
 	APISecret     string
 	AllowInsecure bool
 	DryRun        bool
+	Timeout       time.Duration
 	MaxRetries    int
 	MinBackoff    time.Duration
 	MaxBackoff    time.Duration
@@ -64,6 +65,8 @@ func NewClient(svc *ClientSvc, conf ClientConfig) (*Client, error) {
 	httpClient.HTTPClient.Transport = &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.AllowInsecure},
 	}
+
+	httpClient.HTTPClient.Timeout = conf.Timeout
 
 	httpClient.RetryWaitMax = conf.MaxBackoff
 	httpClient.RetryWaitMin = conf.MinBackoff
