@@ -1,6 +1,10 @@
 package opnsense_test
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"time"
+
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	. "github.com/onsi/ginkgo/v2"
@@ -65,6 +69,39 @@ var _ = Describe("Opnsense Client", func() {
 			err := client.UnboundDeleteHostOverride(ctx, "")
 
 			Expect(err).ToNot(HaveOccurred())
+		})
+	})
+
+	Context("request timeout", func() {
+		It("should give up on a slow server within the retry budget", func(ctx SpecContext) {
+			release := make(chan struct{})
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				<-release
+			}))
+			DeferCleanup(srv.Close)
+			DeferCleanup(func() { close(release) })
+
+			client, err := opnsense.NewClient(
+				&opnsense.ClientSvc{
+					Logger: fixtures.NewTestLogger(),
+				},
+				opnsense.ClientConfig{
+					Uri:        srv.URL,
+					APIKey:     "testkey",
+					APISecret:  "testsecret",
+					Timeout:    200 * time.Millisecond,
+					MaxRetries: 1,
+					MinBackoff: 50 * time.Millisecond,
+					MaxBackoff: 50 * time.Millisecond,
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			start := time.Now()
+			err = client.CheckUnboundService(ctx)
+
+			Expect(err).To(HaveOccurred())
+			Expect(time.Since(start)).To(BeNumerically("<", 1*time.Second))
 		})
 	})
 })
