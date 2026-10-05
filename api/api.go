@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/metrics"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
@@ -32,6 +33,7 @@ type ApiConfig struct {
 type ApiSvc struct {
 	Logger    *services.Logger
 	Validator *services.Validator
+	Metrics   *metrics.Metrics
 
 	Provider       *provider.Provider
 	OpnsenseClient *opnsense.Client

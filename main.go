@@ -12,6 +12,7 @@ import (
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api/probes"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/config"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/metrics"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/opnsense"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services/provider"
@@ -41,9 +42,12 @@ func main() {
 				return err
 			}
 
+			m := metrics.New()
+
 			client, err := opnsense.NewClient(
 				&opnsense.ClientSvc{
-					Logger: logger,
+					Logger:  logger,
+					Metrics: m,
 				},
 				conf.OpnsenseClient,
 			)
@@ -68,6 +72,7 @@ func main() {
 			a := api.NewApi(&api.ApiSvc{
 				Logger:         logger,
 				Validator:      validator,
+				Metrics:        m,
 				OpnsenseClient: client,
 				Provider:       provider,
 			}, conf.Api)
@@ -75,6 +80,7 @@ func main() {
 			p := probes.NewApi(&probes.ApiSvc{
 				Logger:     logger,
 				Validator:  validator,
+				Metrics:    m,
 				WebhookApi: a,
 			}, conf.Probes)
 

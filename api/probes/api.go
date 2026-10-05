@@ -9,6 +9,7 @@ import (
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/metrics"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/labstack/echo/v5"
 )
@@ -31,6 +32,7 @@ type ApiConfig struct {
 type ApiSvc struct {
 	Logger    *services.Logger
 	Validator *services.Validator
+	Metrics   *metrics.Metrics
 
 	WebhookApi *api.Api
 }
