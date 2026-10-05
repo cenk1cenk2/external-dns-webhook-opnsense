@@ -11,9 +11,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/metrics"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/hashicorp/go-retryablehttp"
 	"go.uber.org/zap"
@@ -38,10 +40,12 @@ type Client struct {
 	allowInsecure bool
 	isDryRun      bool
 	log           *zap.SugaredLogger
+	metrics       *metrics.Metrics
 }
 
 type ClientSvc struct {
-	Logger *services.Logger
+	Logger  *services.Logger
+	Metrics *metrics.Metrics
 }
 
 type ClientConfig struct {
@@ -71,6 +75,11 @@ func NewClient(svc *ClientSvc, conf ClientConfig) (*Client, error) {
 	httpClient.RetryWaitMax = conf.MaxBackoff
 	httpClient.RetryWaitMin = conf.MinBackoff
 	httpClient.RetryMax = conf.MaxRetries
+	httpClient.RequestLogHook = func(_ retryablehttp.Logger, _ *http.Request, attempt int) {
+		if attempt > 0 {
+			svc.Metrics.ClientRetries.Inc()
+		}
+	}
 
 	return &Client{
 		client:        httpClient,
@@ -80,6 +89,7 @@ func NewClient(svc *ClientSvc, conf ClientConfig) (*Client, error) {
 		allowInsecure: conf.AllowInsecure,
 		isDryRun:      conf.DryRun,
 		log:           svc.Logger.Sugar(),
+		metrics:       svc.Metrics,
 	}, nil
 }
 
@@ -113,11 +123,18 @@ func (c *Client) do(ctx context.Context, method string, endpoint string, body an
 		req.Header.Add("Content-Type", "application/json")
 	}
 
+	label := metricsEndpoint(endpoint)
+	start := time.Now()
 	r, err := c.client.Do(req)
+	c.metrics.ClientRequestDuration.WithLabelValues(method, label).Observe(time.Since(start).Seconds())
 	if err != nil {
+		c.metrics.ClientRequests.WithLabelValues(method, label, "error").Inc()
+
 		return err
 	}
 	defer r.Body.Close()
+
+	c.metrics.ClientRequests.WithLabelValues(method, label, strconv.Itoa(r.StatusCode)).Inc()
 
 	if r.StatusCode != http.StatusOK {
 		return fmt.Errorf("status code non-200; status code %d", r.StatusCode)
@@ -131,6 +148,12 @@ func (c *Client) do(ctx context.Context, method string, endpoint string, body an
 	}
 
 	return nil
+}
+
+func metricsEndpoint(endpoint string) string {
+	segments := strings.SplitN(strings.Trim(endpoint, "/"), "/", 4)
+
+	return "/" + strings.Join(segments[:min(len(segments), 3)], "/")
 }
 
 func (c *Client) CheckUnboundService(ctx context.Context) error {
@@ -255,7 +278,7 @@ func (c *Client) UnboundDeleteHostOverride(ctx context.Context, uuid string) err
 	return nil
 }
 
-func (c *Client) ReconfigureService(ctx context.Context) error {
+func (c *Client) ReconfigureService(ctx context.Context) (err error) {
 	c.log.Debug("Reconfiguring Unbound service.")
 
 	if c.isDryRun {
@@ -264,8 +287,17 @@ func (c *Client) ReconfigureService(ctx context.Context) error {
 		return nil
 	}
 
+	defer func() {
+		result := "ok"
+		if err != nil {
+			result = "error"
+		}
+
+		c.metrics.UnboundReconfigures.WithLabelValues(result).Inc()
+	}()
+
 	resp := &ServiceResponse{}
-	err := c.do(ctx, "POST", "/unbound/service/reconfigure", nil, resp)
+	err = c.do(ctx, "POST", "/unbound/service/reconfigure", nil, resp)
 	if err != nil {
 		return err
 	}

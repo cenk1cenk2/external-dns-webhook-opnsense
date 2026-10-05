@@ -4,7 +4,9 @@ import (
 	"errors"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
@@ -33,18 +35,14 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 	return []echo.MiddlewareFunc{
 		middleware.Recover(),
 		middleware.RequestID(),
+		a.MetricsMiddleware,
 		middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 			LogStatus:   true,
 			LogURI:      true,
 			LogMethod:   true,
 			LogLatency:  true,
 			LogRemoteIP: true,
-			Skipper: func(c *echo.Context) bool {
-				return slices.Contains([]bool{
-					strings.HasPrefix(c.Path(), "/healthz"),
-					strings.HasPrefix(c.Path(), "/readyz"),
-				}, true)
-			},
+			Skipper:     isProbePath,
 			LogValuesFunc: func(c *echo.Context, v middleware.RequestLoggerValues) error {
 				logger := a.Logger.WithEchoContext(c)
 				if v.Error != nil {
@@ -68,6 +66,35 @@ func (a *Api) GetMiddlewares() []echo.MiddlewareFunc {
 		middleware.CORSWithConfig(middleware.CORSConfig{
 			AllowOrigins: []string{"*"},
 		}),
+	}
+}
+
+func isProbePath(c *echo.Context) bool {
+	return slices.Contains([]bool{
+		strings.HasPrefix(c.Path(), "/healthz"),
+		strings.HasPrefix(c.Path(), "/readyz"),
+	}, true)
+}
+
+func (a *Api) MetricsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c *echo.Context) error {
+		if isProbePath(c) {
+			return next(c)
+		}
+
+		start := time.Now()
+		err := next(c)
+
+		_, status := echo.ResolveResponseStatus(c.Response(), err)
+		route := c.Path()
+		if route == "" {
+			route = "unmatched"
+		}
+
+		a.Metrics.HttpRequests.WithLabelValues(c.Request().Method, route, strconv.Itoa(status)).Inc()
+		a.Metrics.HttpRequestDuration.WithLabelValues(c.Request().Method, route).Observe(time.Since(start).Seconds())
+
+		return err
 	}
 }
 

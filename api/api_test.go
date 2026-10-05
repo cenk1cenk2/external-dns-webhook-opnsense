@@ -7,6 +7,7 @@ import (
 
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/api"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/interfaces"
+	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/metrics"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/internal/services"
 	"github.com/cenk1cenk2/external-dns-webhook-opnsense/test/fixtures"
 	"github.com/labstack/echo/v5"
@@ -26,6 +27,7 @@ var _ = Describe("API", func() {
 			a = api.NewApi(&api.ApiSvc{
 				Logger:    logger,
 				Validator: validator,
+				Metrics:   metrics.New(),
 			}, c.Api)
 			Expect(a).ToNot(BeNil())
 			Expect(a.Echo).ToNot(BeNil())
@@ -54,6 +56,7 @@ var _ = Describe("API", func() {
 			a = api.NewApi(&api.ApiSvc{
 				Logger:    logger,
 				Validator: validator,
+				Metrics:   metrics.New(),
 			}, c.Api)
 			Expect(a).ToNot(BeNil())
 		})
@@ -100,6 +103,7 @@ var _ = Describe("API", func() {
 			a = api.NewApi(&api.ApiSvc{
 				Logger:    logger,
 				Validator: validator,
+				Metrics:   metrics.New(),
 			}, c.Api)
 			Expect(a).ToNot(BeNil())
 		})

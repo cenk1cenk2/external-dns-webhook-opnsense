@@ -158,6 +158,19 @@ These flags match the upstream [external-dns domain filtering configuration](htt
 
 <!--- clidocsstop -->
 
+## Metrics
+
+Prometheus metrics are served on the health port (`--health-port`, default `8080`) at `/metrics`, next to `/healthz` and `/readyz`. Go runtime and process metrics are included alongside the series below.
+
+| Metric                                           | Type      | Labels                       | Description                                                          |
+| ------------------------------------------------ | --------- | ---------------------------- | -------------------------------------------------------------------- |
+| `opnsense_webhook_http_requests_total`           | counter   | `method`, `route`, `code`    | Requests handled by the webhook server, probe paths excluded.        |
+| `opnsense_webhook_http_request_duration_seconds` | histogram | `method`, `route`            | Duration of requests handled by the webhook server.                  |
+| `opnsense_webhook_client_requests_total`         | counter   | `method`, `endpoint`, `code` | OPNsense API calls; `code` is `error` when no response was received. |
+| `opnsense_webhook_client_request_duration_seconds` | histogram | `method`, `endpoint`       | Duration of OPNsense API calls including retries and backoff.        |
+| `opnsense_webhook_client_retries_total`          | counter   |                              | OPNsense API request retries.                                        |
+| `opnsense_webhook_unbound_reconfigures_total`    | counter   | `result`                     | Unbound reconfigure calls, `ok` or `error`.                          |
+
 ## Related Projects
 
 - [external-dns](https://github.com/kubernetes-sigs/external-dns) - The core library that enables this.
