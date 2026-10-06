@@ -12,7 +12,7 @@ require (
 	github.com/prometheus/client_golang v1.24.1
 	github.com/stretchr/testify v1.12.1
 	github.com/thessem/zap-prettyconsole v0.7.0
-	github.com/urfave/cli/v3 v3.13.0
+	github.com/urfave/cli/v3 v3.14.0
 	go.uber.org/zap v1.28.0
 	golang.org/x/text v0.42.0
 	sigs.k8s.io/external-dns v0.23.0
