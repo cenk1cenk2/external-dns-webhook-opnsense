@@ -116,7 +116,7 @@ version:
 publish:
   stage: publish
   variables:
-    CONTAINER_IMAGE_NAME: cenk1cenk2/external-dns-webhook-opnsense
+    CONTAINER_IMAGE_NAME: docker.io/cenk1cenk2/external-dns-webhook-opnsense
     CONTAINER_IMAGE_TAGS: $CI_COMMIT_TAG
     CONTAINER_IMAGE_BUILD_ARGS: |-
       BIN: ./dist/external-dns-webhook-opnsense-linux-amd64
