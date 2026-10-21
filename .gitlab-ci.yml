@@ -1,13 +1,4 @@
 ---
-default:
-  interruptible: true
-
-workflow:
-  rules:
-    - if: $CI_COMMIT_BRANCH =~ /^renovate\//
-      when: never
-    - when: always
-
 stages:
   - install
   - build
@@ -24,28 +15,32 @@ include:
       - /go/build.gitlab-ci.yml
 
   - project: devops/pipelines
-    ref: semantic-release@2.5.2
+    ref: semantic-release@3.0.0
     file:
       - /semantic-release/publish.gitlab-ci.yml
 
   - project: devops/pipelines
-    ref: buildah@2.2.2
+    ref: buildah@2.3.0
     file:
       - /buildah/build.gitlab-ci.yml
       - /buildah/registry-dockerhub.gitlab-ci.yml
 
   - project: devops/pipelines
-    ref: references@1.4.0
+    ref: references@1.5.0
     file:
       - /references/github-token.gitlab-ci.yml
 
   - project: devops/pipelines
-    ref: references@1.4.0
+    ref: references@1.5.0
     file: /references/github-status.gitlab-ci.yml
     inputs:
       app_id_variable: PIPELINES_GITHUB_APP_ID
       installation_id_variable: PIPELINES_GITHUB_APP_INSTALLATION_ID
       private_key_variable: PIPELINES_GITHUB_APP_PRIVATE_KEY
+
+  - project: devops/pipelines
+    ref: references@1.5.0
+    file: /references/workflow.gitlab-ci.yml
 
 variables:
   GO_VERSION: "1.27-alpine"
@@ -106,6 +101,8 @@ version:
     - lint
     - test
     - build
+  dependencies:
+    - github-token
   rules:
     - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
       when: on_success
@@ -122,5 +119,8 @@ publish:
       BIN: ./dist/external-dns-webhook-opnsense-linux-amd64
   extends:
     - .container-build
+  needs:
+    - job: build
+      artifacts: true
   rules:
     - if: $CI_COMMIT_TAG
