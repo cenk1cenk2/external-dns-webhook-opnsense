@@ -6,7 +6,7 @@ require (
 	github.com/creasty/defaults v1.11.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/hashicorp/go-retryablehttp v0.7.8
-	github.com/labstack/echo/v5 v5.4.0
+	github.com/labstack/echo/v5 v5.4.1
 	github.com/onsi/ginkgo/v2 v2.33.1
 	github.com/onsi/gomega v1.44.0
 	github.com/prometheus/client_golang v1.25.0
