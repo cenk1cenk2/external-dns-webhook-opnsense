@@ -1,6 +1,7 @@
 package opnsense_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -107,6 +108,98 @@ var _ = Describe("Opnsense Client", func() {
 
 			Expect(err).To(HaveOccurred())
 			Expect(time.Since(start)).To(BeNumerically("<", 1*time.Second))
+		})
+
+		It("should make a single attempt bounded by the timeout without retries", func(ctx SpecContext) {
+			release := make(chan struct{})
+			calls := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				calls++
+				<-release
+			}))
+			DeferCleanup(srv.Close)
+			DeferCleanup(func() { close(release) })
+
+			client, err := opnsense.NewClient(
+				&opnsense.ClientSvc{
+					Logger:  fixtures.NewTestLogger(),
+					Metrics: metrics.New(),
+				},
+				opnsense.ClientConfig{
+					Uri:        srv.URL,
+					APIKey:     "testkey",
+					APISecret:  "testsecret",
+					Timeout:    200 * time.Millisecond,
+					MaxRetries: 0,
+					MinBackoff: 50 * time.Millisecond,
+					MaxBackoff: 50 * time.Millisecond,
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			start := time.Now()
+			err = client.CheckUnboundService(ctx)
+
+			var upstream *opnsense.UpstreamError
+			Expect(errors.As(err, &upstream)).To(BeTrue())
+			Expect(upstream.Status).To(Equal(http.StatusGatewayTimeout))
+			Expect(calls).To(Equal(1))
+			Expect(time.Since(start)).To(BeNumerically("<", 400*time.Millisecond))
+		})
+	})
+
+	Context("upstream errors", func() {
+		DescribeTable("should classify upstream failures", func(ctx SpecContext, status int, body string, expected int) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(body))
+			}))
+			DeferCleanup(srv.Close)
+
+			client, err := opnsense.NewClient(
+				&opnsense.ClientSvc{
+					Logger:  fixtures.NewTestLogger(),
+					Metrics: metrics.New(),
+				},
+				opnsense.ClientConfig{
+					Uri:        srv.URL,
+					APIKey:     "testkey",
+					APISecret:  "testsecret",
+					Timeout:    time.Second,
+					MinBackoff: time.Millisecond,
+					MaxBackoff: time.Millisecond,
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			var upstream *opnsense.UpstreamError
+			Expect(errors.As(client.CheckUnboundService(ctx), &upstream)).To(BeTrue())
+			Expect(upstream.Status).To(Equal(expected))
+		},
+			Entry("Server Error", http.StatusInternalServerError, `{}`, http.StatusBadGateway),
+			Entry("Unauthorized", http.StatusUnauthorized, `{}`, http.StatusBadGateway),
+			Entry("Malformed Body", http.StatusOK, `{`, http.StatusBadGateway),
+			Entry("Service Not Running", http.StatusOK, `{"rows":[]}`, http.StatusServiceUnavailable),
+		)
+
+		It("should classify unreachable upstream as unavailable", func(ctx SpecContext) {
+			client, err := opnsense.NewClient(
+				&opnsense.ClientSvc{
+					Logger:  fixtures.NewTestLogger(),
+					Metrics: metrics.New(),
+				},
+				opnsense.ClientConfig{
+					Uri:        "http://127.0.0.1:1",
+					Timeout:    100 * time.Millisecond,
+					MinBackoff: time.Millisecond,
+					MaxBackoff: time.Millisecond,
+				},
+			)
+			Expect(err).ToNot(HaveOccurred())
+
+			var upstream *opnsense.UpstreamError
+			Expect(errors.As(client.CheckUnboundService(ctx), &upstream)).To(BeTrue())
+			Expect(upstream.Status).To(Equal(http.StatusServiceUnavailable))
 		})
 	})
 

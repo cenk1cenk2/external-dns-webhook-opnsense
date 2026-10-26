@@ -1,6 +1,7 @@
 package webhook_test
 
 import (
+	"context"
 	json "encoding/json/v2"
 	"fmt"
 	"net/http"
@@ -36,8 +37,23 @@ var _ = Describe("records", func() {
 			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(nil, fmt.Errorf("")).Once()
 
 			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
-			Expect(res.Code).To(Equal(http.StatusUnprocessableEntity))
+			Expect(res.Code).To(Equal(http.StatusInternalServerError))
 		})
+
+		DescribeTable("should be able to handle upstream errors while fetching the records", func(status int) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req.Header.Set(echo.HeaderAccept, webhook.ExternalDnsAcceptedMedia)
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			mocks.Client.EXPECT().UnboundSearchHostOverrides(mock.Anything, mock.Anything).Return(nil, &opnsense.UpstreamError{Status: status, Err: fmt.Errorf("")}).Once()
+
+			Expect(fixtures.Respond(c, handler.HandleRecordsGet)).To(HaveOccurred())
+			Expect(res.Code).To(Equal(status))
+		},
+			Entry("Gateway Timeout", http.StatusGatewayTimeout),
+			Entry("Service Unavailable", http.StatusServiceUnavailable),
+			Entry("Bad Gateway", http.StatusBadGateway),
+		)
 
 		It("should be able to fetch the records on empty response", func() {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -357,6 +373,48 @@ var _ = Describe("records", func() {
 
 			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).ToNot(HaveOccurred())
 			Expect(res.Code).To(Equal(http.StatusNoContent))
+		})
+
+		It("should be able to handle upstream errors while applying the changes", func() {
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/",
+				strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+					Delete: []*endpoint.Endpoint{
+						endpoint.NewEndpoint("example.com", endpoint.RecordTypeA, "192.168.1.1").
+							WithLabel(provider.EndpointLabelUUID.String(), "id-A"),
+					},
+				})),
+			)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+			mocks.Client.EXPECT().
+				UnboundDeleteHostOverride(mock.Anything, "id-A").
+				Return(&opnsense.UpstreamError{Status: http.StatusGatewayTimeout, Err: context.DeadlineExceeded}).
+				Once()
+
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusGatewayTimeout))
+		})
+
+		It("should be able to handle invalid records while applying the changes", func() {
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/",
+				strings.NewReader(fixtures.MustJsonMarshal(&plan.Changes{
+					Create: []*endpoint.Endpoint{
+						endpoint.NewEndpoint("*.example.com", endpoint.RecordTypeA, "192.168.1.1"),
+					},
+				})),
+			)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			Expect(fixtures.Respond(c, handler.HandleRecordsPost)).To(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusUnprocessableEntity))
 		})
 
 		When("deleting records", func() {
