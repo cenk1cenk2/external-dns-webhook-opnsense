@@ -7,8 +7,10 @@ import (
 	"encoding/base64"
 	"encoding/json/jsontext"
 	json "encoding/json/v2"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -62,6 +64,19 @@ type ClientConfig struct {
 
 var _ ClientAdapter = (*Client)(nil)
 
+type UpstreamError struct {
+	Status int
+	Err    error
+}
+
+func (e *UpstreamError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *UpstreamError) Unwrap() error {
+	return e.Err
+}
+
 func NewClient(svc *ClientSvc, conf ClientConfig) (*Client, error) {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
@@ -75,6 +90,7 @@ func NewClient(svc *ClientSvc, conf ClientConfig) (*Client, error) {
 	httpClient.RetryWaitMax = conf.MaxBackoff
 	httpClient.RetryWaitMin = conf.MinBackoff
 	httpClient.RetryMax = conf.MaxRetries
+	httpClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
 	httpClient.RequestLogHook = func(_ retryablehttp.Logger, _ *http.Request, attempt int) {
 		if attempt > 0 {
 			svc.Metrics.ClientRetries.Inc()
@@ -130,20 +146,26 @@ func (c *Client) do(ctx context.Context, method string, endpoint string, body an
 	if err != nil {
 		c.metrics.ClientRequests.WithLabelValues(method, label, "error").Inc()
 
-		return err
+		status := http.StatusServiceUnavailable
+		var netErr net.Error
+		if errors.Is(err, context.DeadlineExceeded) || errors.As(err, &netErr) && netErr.Timeout() {
+			status = http.StatusGatewayTimeout
+		}
+
+		return &UpstreamError{Status: status, Err: err}
 	}
 	defer r.Body.Close()
 
 	c.metrics.ClientRequests.WithLabelValues(method, label, strconv.Itoa(r.StatusCode)).Inc()
 
 	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("status code non-200; status code %d", r.StatusCode)
+		return &UpstreamError{Status: http.StatusBadGateway, Err: fmt.Errorf("status code non-200; status code %d", r.StatusCode)}
 	}
 
 	if res != nil {
 		err = json.UnmarshalRead(r.Body, res)
 		if err != nil {
-			return err
+			return &UpstreamError{Status: http.StatusBadGateway, Err: err}
 		}
 	}
 
@@ -177,7 +199,7 @@ func (c *Client) CheckUnboundService(ctx context.Context) error {
 		}
 	}
 
-	return fmt.Errorf("unbound service is not running")
+	return &UpstreamError{Status: http.StatusServiceUnavailable, Err: fmt.Errorf("unbound service is not running")}
 }
 
 func (c *Client) UnboundSearchHostOverrides(ctx context.Context, req *UnboundSearchHostOverrideRequest) (*UnboundSearchHostOverrideResponse, error) {
@@ -308,12 +330,12 @@ func (c *Client) ReconfigureService(ctx context.Context) (err error) {
 	} else if resp.Result != "" {
 		status = resp.Result
 	} else {
-		return fmt.Errorf("reconfigure returned with unknown status response")
+		return &UpstreamError{Status: http.StatusBadGateway, Err: fmt.Errorf("reconfigure returned with unknown status response")}
 	}
 
 	status = cases.Lower(language.English).String(strings.TrimSpace(status))
 	if status != "ok" {
-		return fmt.Errorf("reconfigure failed. status: %s", status)
+		return &UpstreamError{Status: http.StatusBadGateway, Err: fmt.Errorf("reconfigure failed. status: %s", status)}
 	}
 
 	c.log.Debug("Reconfigured Unbound service.")

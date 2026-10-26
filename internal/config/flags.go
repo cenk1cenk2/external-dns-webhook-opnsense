@@ -113,7 +113,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_TIMEOUT"),
 			),
 			Required:    false,
-			Value:       2 * time.Second,
+			Value:       10 * time.Second,
 			Destination: &c.OpnsenseClient.Timeout,
 		},
 
@@ -124,7 +124,7 @@ func BindFlags(c *Config) []cli.Flag {
 				cli.EnvVar("OPNSENSE_MAX_RETRIES"),
 			),
 			Required:    false,
-			Value:       1,
+			Value:       0,
 			Destination: &c.OpnsenseClient.MaxRetries,
 		},
 

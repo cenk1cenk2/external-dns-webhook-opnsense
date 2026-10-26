@@ -56,6 +56,21 @@ var _ = Describe("adjustendpoints", func() {
 			Expect(res.Header().Get(echo.HeaderContentType)).To(Equal(webhook.ExternalDnsAcceptedMedia))
 		})
 
+		It("should be able to handle invalid endpoints", func() {
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/",
+				strings.NewReader(fixtures.MustJsonMarshal([]*endpoint.Endpoint{
+					endpoint.NewEndpoint("*.example.com", endpoint.RecordTypeA, "192.168.1.1"),
+				})),
+			)
+			req.Header.Set(echo.HeaderContentType, webhook.ExternalDnsAcceptedMedia)
+			c, res := fixtures.CreateEchoContext(nil, req)
+
+			Expect(fixtures.Respond(c, handler.HandleAdjustEndpointsPost)).To(HaveOccurred())
+			Expect(res.Code).To(Equal(http.StatusUnprocessableEntity))
+		})
+
 		It("should add SetIdentifier to single target A record", func() {
 			req := httptest.NewRequest(
 				http.MethodPost,
